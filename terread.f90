@@ -106,6 +106,11 @@
         ,topfilt, cutsrtm, cut10km, cut1km, incg, filepath10km  &
         ,filepath1km, filepath250m, filepathsrtm
 
+      ! Start banner
+      write(6,*) "=================================================================================="
+      write(6,*) "CCAM: Starting terread"
+      write(6,*) "=================================================================================="
+      
 #ifndef stacklimit
       ! For linux only - removes stacklimit on all processors
       call setstacklimit(-1)
@@ -856,6 +861,13 @@
       deallocate(in,ie,is,iw)
       call rworkdealloc
 
+      write(6,*) "CCAM: Terread completed successfully"
+      
+      ! End banner
+      write(6,*) "=================================================================================="
+      write(6,*) "CCAM: Finished terread"
+      write(6,*) "=================================================================================="
+      
       stop
       end
 !=======================================================================
