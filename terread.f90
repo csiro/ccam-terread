@@ -861,7 +861,8 @@
       deallocate(in,ie,is,iw)
       call rworkdealloc
 
-      write(6,*) "CCAM: Terread completed successfully"
+      ! Complete
+      write(6,*) "CCAM: terread completed successfully"
       
       ! End banner
       write(6,*) "=================================================================================="
