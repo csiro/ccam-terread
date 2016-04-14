@@ -22,4 +22,5 @@
 /setxyz_m.f90 -text
 /stacklimit.c -text
 /terread.f90 -text
+/version.h -text
 /xyzinfo_m.f90 -text

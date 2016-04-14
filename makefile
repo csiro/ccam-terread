@@ -35,6 +35,12 @@ clean:
 
 stacklimit.o: stacklimit.c
 	cc -c stacklimit.c
+version.h: FORCE
+	rm -f brokenver tmpver
+	echo "      character(len=*), parameter :: version ='TERREAD r'" > brokenver
+	echo "      character(len=*), parameter :: version ='TERREAD r`svnversion .`'" > tmpver
+	grep exported tmpver || grep Unversioned tmpver || cmp tmpver brokenver || cmp tmpver version.h || mv tmpver version.h
+FORCE:
 
 .f90.o:
 	$(FC) -c $(XFLAGS) $(INC) $(PPFLAG90) $<
@@ -44,7 +50,7 @@ stacklimit.o: stacklimit.c
 # Remove mod rule from Modula 2 so GNU make doesn't get confused
 %.o : %.mod
 
-terread.o : ccinterp.o rwork.o netcdf_m.o
+terread.o : ccinterp.o rwork.o netcdf_m.o version.h
 read250.o : ccinterp.o rwork.o
 read1km.o : ccinterp.o rwork.o
 read10km.o : ccinterp.o rwork.o
