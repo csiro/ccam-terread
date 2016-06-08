@@ -119,9 +119,9 @@
       call setstacklimit(-1)
 #endif      
       
-      open ( unit=5,file='top.nml',status='old' )
-      read ( 5,topnml, end=5 )
- 5    write ( 6,topnml )
+      !open ( unit=5,file='top.nml',status='old' )
+      read ( 5,topnml )
+      write ( 6,topnml )
 
       jl=6*il 
       call rworkalloc(il)
