@@ -33,7 +33,8 @@
       parameter ( zmin=-100 )
 
       logical debug,ok,ow
-      logical patch
+      logical patcha, patchb, patchc
+      logical patchd, patche, patchf
 
       data ow/.false./
 
@@ -49,7 +50,12 @@
       close(13)
       
       ! MJT bug fix
-      patch = ( lons==144.0010 .and. lats==-27.9988 )
+      patcha = ( lons==144.001 .and. lats==-27.9988 )
+      patchb = ( lons==126.001 .and. lats==-19.9988 )
+      patchc = ( lons==138.001 .and. lats==-19.9988 )      
+      patchd = ( lons==143.819 .and. lats==-43.7412 )
+      patche = ( lons==132.001 .and. lats==-15.9987 )            
+      patchf = ( lons==120.001 .and. lats==-27.9988 )
 
 !#######################################################################
       do jg=1,ny
@@ -69,10 +75,15 @@
 !#######################################################################
 
            n=ig+(jg-1)*nx
-   
+           
            ! MJT bug fix
-           if (patch.and.(jg==526.or.jg==527).and.zz(n)<0) cycle
-   
+           if (patcha.and.(jg>=526.and.jg<=527)) cycle
+           if (patchb.and.(jg>=334.and.jg<=335)) cycle
+           if (patchc.and.(jg>=706.and.jp<=707)) cycle
+           if (patchd.and.(jg>=1538.and.jg<=1539)) cycle
+           if (patche.and.(jg>=1.and.jg<=3)) cycle
+           if (patchf.and.(jg>=91.and.jg<=92)) cycle
+	   
            aglat=lats+real(jg-1)*dl
            aglon=lons+real(ig-1)*dl
            if(ow)write(6,*)ig,aglon
@@ -85,7 +96,6 @@
 !-----------------------------------------------------------------------
 
 ! compute model grid i,j
-           !call latltoij(aglon,aglat,alci,alcj,nface)  ! con-cubic/octagon
            call lltoijmod(aglon,aglat,alci,alcj,nface)  ! con-cubic/octagon
            lci = nint(alci)
            lcj = nint(alcj)
@@ -95,7 +105,7 @@
 
 ! check to make sure within grid dimensions
            if(lci.gt.0.and.lci.le.il.and.lcj.gt.0.and.lcj.le.jl) then
-   
+	   
            if (idsrtm(lci,lcj)==0) then ! exclude points which already have srtm data
                
              if( zz(n).lt.1 ) then

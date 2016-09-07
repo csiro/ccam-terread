@@ -119,7 +119,7 @@
       call setstacklimit(-1)
 #endif      
       
-      !open ( unit=5,file='top.nml',status='old' )
+      !open ( unit=5,file='top.nml',status='old' ) ! MJT notes - why open unit=5?
       read ( 5,topnml )
       write ( 6,topnml )
 
@@ -734,6 +734,8 @@
               zss(i,j)=zss(iq2(1),iq2(2))
               rmsk(i,j)=rmsk(iq2(1),iq2(2))
               tsd(i,j)=tsd(iq2(1),iq2(2))
+              tmin(i,j)=tmin(iq2(1),iq2(2))
+              tmax(i,j)=tmax(iq2(1),iq2(2))
               almsk(i,j)=almsk(iq2(1),iq2(2))
               inumx(i,j)=1
             else
@@ -800,6 +802,7 @@
           zss(i,j)=9.80616*zss(i,j)
         end do ! i=1,il
       end do ! j=1,jl
+      
       if (.not.netout) then
         ilout=min(il,30)
         write (formout,'(''('',i3,''f7.0)'')')ilout   !  i.e. (<il>f7.0)

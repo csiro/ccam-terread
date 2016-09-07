@@ -69,7 +69,7 @@ rlat0=lonlat(2)
 il=ecodim(1)
 jl=ecodim(2)
 ifull=il*jl
-npanels=jl/il-1
+!npanels=jl/il-1
 iquad=1+il*((8*npanels)/(npanels+4))
 
 Write(6,*) 'Start setxyz'
@@ -133,7 +133,7 @@ rlat0=lonlat(2)
 il=ecodim(1)
 jl=ecodim(2)
 ifull=il*jl
-npanels=jl/il-1
+!npanels=jl/il-1
 iquad=1+il*((8*npanels)/(npanels+4))
 
 Write(6,*) 'Start setxyz'
@@ -206,7 +206,7 @@ rlat0=lonlat(2)
 il=ecodim(1)
 jl=ecodim(2)
 ifull=il*jl
-npanels=jl/il-1
+!npanels=jl/il-1
 iquad=1+il*((8*npanels)/(npanels+4))
 
 Write(6,*) 'Start setxyz'
