@@ -63,16 +63,16 @@
       integer*2, dimension(3601) :: idata1
       integer*2, dimension(1201) :: idata
       character*1 ns,ew
-      character*150 file
+      character*1024 file
       character*8 ausfile(nter)
       character*1 esg,nsg
       character*2 ncord
       character*3 ecord
-      character*150 fname
-      character*130 filepath10km
-      character*130 filepath1km
-      character*130 filepath250m
-      character*130 filepathsrtm
+      character*1024 fname
+      character*1024 filepath10km
+      character*1024 filepath1km
+      character*1024 filepath250m
+      character*1024 filepathsrtm
 
       real lons,lats
       real lone,late
