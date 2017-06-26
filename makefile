@@ -4,7 +4,7 @@
 
 ifneq ($(CUSTOM),yes)
 FC = ifort
-XFLAGS = -O -assume byterecl
+XFLAGS = -O -assume byterecl -fp-model precise -traceback
 LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
 INC = -I $(NETCDF_ROOT)/include
 PPFLAG90 = -fpp
