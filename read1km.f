@@ -22,37 +22,39 @@
       subroutine read1km(file,nx,ny,lons,lats,debug,idia,jdia,il,cut1km)
 
       use ccinterp
+      use netcdf_m
       use rwork
 
       integer, intent(in) :: il
       integer jl
       character(len=*), intent(in) :: file
-      integer*2 izs(7200)
+      integer(kind=2), dimension(7200) :: izs
+      integer, dimension(7200) :: i4zs
       real dl
       integer nrecl
+      integer ncid, varid, ierr
       real lons,lats
       real, intent(in) :: cut1km
-      parameter ( zmin=-100 )
-
       logical debug,ok
-
-      !include 'newmpar.h'
-      !include 'rwork.h' ! rmsk,inum,inumx,zss,almsk,tmax,tmin,tsd,rlatd,rlond,grid,id1km,rlonx,rlonn,rlatx,rlatn
+      logical ncfile
 
       jl=6*il
 
       write(6,*)"read1km file,nx,ny=",file,nx,ny
 
       dl = 1.0/120.0
-
-! on sol-as
-!      nrecl = nx*2
-!      open(21,file=file,access='direct',form='unformatted',recl=nrecl)
-
-! on jjk-as
       nrecl = nx*2
-      open(CONVERT='BIG_ENDIAN',unit=21,file=file,access='direct'
+      
+      ierr = nf90_open(trim(file)//'.nc',NF90_NOWRITE,ncid)
+      if ( ierr==NF90_NOERR ) then
+        ncfile = .true.
+        write(6,*) "Found netcdf version"
+        ierr = nf90_inq_varid(ncid,"topo",varid)
+      else
+        ncfile = .false.
+        open(CONVERT='BIG_ENDIAN',unit=21,file=file,access='direct'
      &            ,form='unformatted',recl=nrecl)
+      end if  
 
 !#######################################################################
       do j=1,ny
@@ -66,12 +68,18 @@
 
         !if ( ok ) write(6,*)"lat,latn,latx,lons=",aglat,rlatn,rlatx,lons
 
-         read(21,rec=j) izs(1:nx)
+        if ( ncfile ) then
+          ierr = nf90_get_var(ncid,varid,i4zs(1:nx),
+     &    start=(/1,j/),count=(/nx,1/))
+        else    
+          read(21,rec=j) izs(1:nx)
+          i4zs(1:nx) = izs(1:nx)
+        end if 
          !rmax=-1.e35
          !rmin=+1.e35
          !do i=1,nx
-         !  rmax=max(rmax,real(izs(i)))
-         !  rmin=min(rmin,real(izs(i)))
+         !  rmax=max(rmax,real(i4zs(i)))
+         !  rmin=min(rmin,real(i4zs(i)))
          !enddo !i=1,nx
          !if(rmax.gt.-999.)write(6,*)"j,rmax,rmin=",j,rmax,rmin
         izsmaxj=-99999
@@ -94,8 +102,8 @@
    !        endif
 
 !-----------------------------------------------------------------------
-          izsmaxj=max(izsmaxj,izs(i))
-          izsminj=min(izsminj,izs(i))
+          izsmaxj=max(izsmaxj,i4zs(i))
+          izsminj=min(izsminj,i4zs(i))
 
            ok=(aglat.gt.rlatn.and.aglat.lt.rlatx)
            ok=ok .and. (aglon.gt.rlonn.and.aglon.lt.rlonx)
@@ -117,19 +125,19 @@
 
 ! check to make sure within grid dimensions
            if(lci.gt.0.and.lci.le.il.and.lcj.gt.0.and.lcj.le.jl)then
-             !write(6,*)"i,j,izs(i)=",i,j,izs(i)
+             !write(6,*)"i,j,i4zs(i)=",i,j,i4zs(i)
 
            ! exclude points which already have srtm or 250m data
            if (idsrtm(lci,lcj)==0.and.id250m(lci,lcj)==0) then 
                
-             if( izs(i).lt.cut1km ) then
+             if( i4zs(i).lt.cut1km ) then
 ! ocean point zs < 1
                amask = 0.
                zs=0.
              else  ! zs>=-1000
 ! land point zs >= 1
                amask = 1.
-               zs=real(izs(i))
+               zs=real(i4zs(i))
              end if  ! zs<-1000
 
              id1km(lci,lcj) = id1km(lci,lcj) + 1
@@ -148,7 +156,7 @@
              if ( debug ) then
                 if ( lci.eq.idia .and. lcj.eq.jdia ) then
                   write(6,'("lci,lcj,i,izs(i),zs,zss(),almsk(), inum()="
-     &           ,4i6,3f10.3,i6)') lci,lcj,i,izs(i),zs,zss(lci,lcj)
+     &           ,4i6,3f10.3,i6)') lci,lcj,i,i4zs(i),zs,zss(lci,lcj)
      &                       ,almsk(lci,lcj), inum(lci,lcj)
                 endif  ! selected points only
              endif  ! debug
@@ -182,7 +190,11 @@
       enddo ! j
 !#######################################################################
 
-      close(21)
+      if ( ncfile ) then
+        ierr = nf90_close(ncid)
+      else  
+        close(21)
+      end if  
 
       return
       end ! read1km

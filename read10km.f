@@ -1,6 +1,6 @@
 ! Conformal Cubic Atmospheric Model
     
-! Copyright 2015 Commonwealth Scientific Industrial Research Organisation (CSIRO)
+! Copyright 2015-2017 Commonwealth Scientific Industrial Research Organisation (CSIRO)
     
 ! This file is part of the Conformal Cubic Atmospheric Model (CCAM)
 !
@@ -24,27 +24,20 @@
       use ccinterp
       use rwork
 
-      parameter ( nx=4320, ny=2160 )
+      integer, parameter :: nx=4320
+      integer, parameter :: ny=2160
 
       integer, intent(in) :: il
       integer jl
-      !integer izs(7200)
-      integer izs(nx)
+      integer, dimension(nx) :: izs
       real dl
       real lons,lats
       real, intent(in) :: cut10km
       character(len=*), intent(in) :: filepath10km
-      parameter ( zmin=-100 )
-
-      logical debug,do1km
-
-      !include 'newmpar.h'
-      !include 'rwork.h' ! rmsk,inum,inumx,zss,almsk,tmax,tmin,tsd,rlatd,rlond,grid,id1km,rlonx,rlonn,rlatx,rlatn
+      logical, intent(in) :: debug, do1km
 
       jl=6*il
 
-      !nx=4320
-      !ny=2160
       lats=-90.
       lons=0.
       dl = 5./60.

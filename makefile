@@ -51,9 +51,10 @@ FORCE:
 %.o : %.mod
 
 terread.o : ccinterp.o rwork.o netcdf_m.o version.h
-read250.o : ccinterp.o rwork.o
-read1km.o : ccinterp.o rwork.o
+read250.o : ccinterp.o rwork.o netcdf_m.o
+read1km.o : ccinterp.o rwork.o netcdf_m.o
 read10km.o : ccinterp.o rwork.o
+read_ht.o : netcdf_m.o
 ccinterp.o : ccinterp.f90 setxyz_m.o xyzinfo_m.o latltoij_m.o newmpar_m.o indices_m.o precis_m.o
 latltoij_m.o : latltoij_m.f90 xyzinfo_m.o newmpar_m.o precis_m.o
 setxyz_m.o : setxyz_m.f90 newmpar_m.o indices_m.o parm_m.o precis_m.o ind_m.o xyzinfo_m.o jimco_m.o jimcc_m.o 

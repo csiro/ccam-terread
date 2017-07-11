@@ -1,6 +1,6 @@
 ! Conformal Cubic Atmospheric Model
     
-! Copyright 2015 Commonwealth Scientific Industrial Research Organisation (CSIRO)
+! Copyright 2015-2017 Commonwealth Scientific Industrial Research Organisation (CSIRO)
     
 ! This file is part of the Conformal Cubic Atmospheric Model (CCAM)
 !
@@ -49,6 +49,7 @@
       logical debug, do1km, okx, oky, do250, dosrtm
       logical dosrtm1
       logical netout, topfilt
+      logical ncfile
       character*60 fileout
       character*9 formout
 
@@ -57,11 +58,13 @@
       integer il,jl,ilout
       integer ii,jj,kk,ll,nface,lci,lcj
       integer lcis,lcjs,incg
+      integer ncid, varid
       integer, dimension(2) :: iq_n, iq_s, iq_e, iq_w
       integer, dimension(2) :: ccdim,pxy
       integer, dimension(:), allocatable :: in,ie,is,iw
       integer*2, dimension(3601) :: idata1
       integer*2, dimension(1201) :: idata
+      integer, dimension(1201) :: i4data
       character*1 ns,ew
       character*1024 file
       character*8 ausfile(nter)
@@ -120,19 +123,58 @@
 #endif      
       
       !open ( unit=5,file='top.nml',status='old' ) ! MJT notes - why open unit=5?
+      write(6,*) "Reading topnml namelist"
       read ( 5,topnml )
+      write(6,*) "Finished reading namelist"
       write ( 6,topnml )
 
       jl=6*il 
       call rworkalloc(il)
 
       if ( do250 ) then
-        open ( unit=88, file=trim(filepath250m)//'/'//'fort.88', status='old' )
-        do n = 1,37
-          read(88,*) ausfile(n)
-          write(6,*) ausfile(n)
-        end do ! n = 1,37
-        close (88)
+        !open ( unit=88, file=trim(filepath250m)//'/'//'fort.88', status='old' )
+        !do n = 1,37
+        !  read(88,*) ausfile(n)
+        !  write(6,*) ausfile(n)
+        !end do ! n = 1,37
+        !close (88)
+        ausfile(1) = "sd52.ter"
+        ausfile(2) = "sd53.ter"
+        ausfile(3) = "sd54.ter"
+        ausfile(4) = "se51.ter"
+        ausfile(5) = "se52.ter"
+        ausfile(6) = "se53.ter"
+        ausfile(7) = "se54.ter"
+        ausfile(8) = "se55.ter"
+        ausfile(9) = "sf50.ter"
+        ausfile(10) = "sf51.ter"
+        ausfile(11) = "sf52.ter"
+        ausfile(12) = "sf53.ter"
+        ausfile(13) = "sf54.ter"
+        ausfile(14) = "sf55.ter"
+        ausfile(15) = "sg50.ter"
+        ausfile(16) = "sg51.ter"
+        ausfile(17) = "sg52.ter"
+        ausfile(18) = "sg53.ter"
+        ausfile(19) = "sg54.ter"
+        ausfile(20) = "sg55.ter"
+        ausfile(21) = "sg56.ter"
+        ausfile(22) = "sh50.ter"
+        ausfile(23) = "sh51.ter"
+        ausfile(24) = "sh52.ter"
+        ausfile(25) = "sh53.ter"
+        ausfile(26) = "sh54.ter"
+        ausfile(27) = "sh55.ter"
+        ausfile(28) = "sh56.ter"
+        ausfile(29) = "si50.ter"
+        ausfile(30) = "si51.ter"
+        ausfile(31) = "si53.ter"
+        ausfile(32) = "si54.ter"
+        ausfile(33) = "si55.ter"
+        ausfile(34) = "si56.ter"
+        ausfile(35) = "sj54.ter"
+        ausfile(36) = "sj55.ter"
+        ausfile(37) = "sk55.ter"
       end if
 
       ! set-up CC grid
@@ -340,7 +382,16 @@
             end if
             write(ncord,'(I2.2)') abs(jj)
             fname=trim(filepathsrtm)//'/'//nsg//ncord//esg//ecord//'.hgt'
-            open (13,file=fname,access='direct',form='unformatted',convert='big_endian',iostat=ierr,recl=2402,status='old')
+            ierr = nf90_open(trim(fname)//'.nc',NF90_NOWRITE,ncid)
+            if ( ierr==nf90_noerr ) then
+              ncfile = .true.
+              write(6,*) "Found netcdf version"
+              ierr = nf90_inq_varid(ncid,"topo",varid)
+            else  
+              ncfile = .false.  
+              open (13,file=fname,access='direct',form='unformatted',convert='big_endian', &
+                    iostat=ierr,recl=2402,status='old')
+            end if  
 	    
             if (ierr.eq.0) then
 	    
@@ -363,7 +414,12 @@
 	            write(6,*) "Reading ",trim(fname)
                 write(6,*) "cutsrtm=",cutsrtm
                 do kk=1,1200 ! ignore extra overlap row
-                  read(13,rec=kk) idata
+                  if ( ncfile ) then
+                    ierr = nf90_get_var(ncid,varid,i4data,start=(/1,kk/),count=(/1201,1/))  
+                    idata = i4data
+                  else    
+                    read(13,rec=kk) idata
+                  end if  
                   aglat=late-real(kk-1)/1200.
                   do ll=1,1200
                     aglon=lons+real(ll-1)/1200.
@@ -394,7 +450,11 @@
                   end do
                 end do
               end if
-              close(13)
+              if ( ncfile ) then
+                ierr = nf90_close(ncid)
+              else  
+                close(13)
+              end if  
             end if
           end do
         end do
@@ -409,8 +469,21 @@
 
         file=trim(filepath250m)//'/'//trim(ausfile(n))
         write(6,*) file
-        open(13,file=file,form="unformatted")
-        read(13) nx,ny,lons,lats,dl
+        ierr = nf90_open(trim(file)//'.nc',NF90_NOWRITE,ncid)
+        if ( ierr==nf90_noerr ) then
+          ncfile = .true.
+          write(6,*) "Found netcdf version"
+          ierr = nf90_inq_varid(ncid,"topo",varid)
+          ierr = nf90_get_att(ncid,nf90_global,"nx",nx)
+          ierr = nf90_get_att(ncid,nf90_global,"ny",ny)
+          ierr = nf90_get_att(ncid,nf90_global,"lons",lons)
+          ierr = nf90_get_att(ncid,nf90_global,"lats",lats)
+          ierr = nf90_get_att(ncid,nf90_global,"dl",dl)           
+        else
+          ncfile = .false.  
+          open(13,file=file,form="unformatted")
+          read(13) nx,ny,lons,lats,dl
+        end if  
         lone=lons+(nx-1)*dl
         late=lats+(ny-1)*dl
 
@@ -428,7 +501,7 @@
 
         if ( okx.and.oky ) then
           write(6,*)"call read250(nx,ny,lons,lats,dl,debug,idia,jdia)"
-          call read250(nx,ny,lons,lats,dl,debug,idia,jdia,il)
+          call read250(nx,ny,lons,lats,dl,debug,idia,jdia,il,ncid,varid,ncfile)
         endif
 
       enddo ! n
@@ -497,7 +570,6 @@
         if ( nint(lats).lt.0 ) ns="S"
 
         write(file,'(a1,i3.3,a1,i2.2,".DEM")') ew,abs(nint(lons)),ns,abs(nint(lats))
-        file=trim(filepath1km)//'/'//trim(file)
 
         okx = .false.
         okx = okx .or. (lons.gt.rlonn .and. lons.lt.rlonx)
@@ -511,7 +583,8 @@
         oky = oky .or. (lats.gt.rlatx .and. late.lt.rlatn)
 
         write(6,'("lons,lone=",2f6.1," lats,late=",2f6.1,a12,2l4)') lons,lone,lats,late,file,okx,oky
-
+        file=trim(filepath1km)//'/'//trim(file)
+        
         if ( okx.and.oky ) then
           write(6,*)"call read1km(file,nx,ny,lons,lats,debug,idia,jdia)"
 ! 9 sept 2004
@@ -538,7 +611,6 @@
         ns="S"
 
         write(file,'(a1,i3.3,a1,i2.2,".DEM")') ew,abs(nint(lons)),ns,abs(nint(lats))
-        file=trim(filepath1km)//'/'//trim(file)
 
         okx = .false.
         okx = okx .or. (lons.gt.rlonn .and. lons.lt.rlonx)
@@ -550,6 +622,7 @@
         oky = oky .or. (lats.gt.rlatx .and. late.lt.rlatn)
 
         write(6,'("lons,lone=",2f6.1," lats,late=",2f6.1,a12,2l4)') lons,lone,lats,late,file,okx,oky
+        file=trim(filepath1km)//'/'//trim(file)
 
         if ( okx.and.oky ) then
           write(6,*)"call read1km(file,nx,ny,lons,lats,debug,idia,jdia)"

@@ -1,6 +1,6 @@
 ! Conformal Cubic Atmospheric Model
     
-! Copyright 2015 Commonwealth Scientific Industrial Research Organisation (CSIRO)
+! Copyright 2015-2017 Commonwealth Scientific Industrial Research Organisation (CSIRO)
     
 ! This file is part of the Conformal Cubic Atmospheric Model (CCAM)
 !
@@ -21,19 +21,19 @@
       
       subroutine read_ht ( lat, ht, filepath10km )
 
+      use netcdf_m
+      
 ! read topography data for specified latitude
 
       implicit none
 
 ! parameters
-      integer      lui ! logical unit for input
-      integer      nlong ! number of longitudes
-      parameter (lui = 99)
-      parameter (nlong = 4320) ! 360 * 12
+      integer, parameter :: lui=99 ! logical unit for input
+      integer, parameter :: nlong=4320 ! number of longitudes
 
 ! arguments
-      integer      ht(nlong) ! topographic height in metres (output)
-      real         lat ! latitude (input)
+      integer, dimension(nlong), intent(out) :: ht ! topographic height in metres (output)
+      real, intent(in) :: lat ! latitude (input)
       character(len=*), intent(in) :: filepath10km
 
 ! variables
@@ -42,31 +42,45 @@
       integer      ios ! i/o status
       integer(kind=8) ival ! int. value
       integer      j ! subscript
-      logical      new ! true 1st call
-      save new
-      data new / .true. /
+      integer :: ierr
+      integer, save :: ncid, varid
+      logical, save :: new=.true. ! true 1st call
+      logical, save :: ncfile=.false. ! is input a netcdf file?
 
 ! open file
       if (new) then
          write(6,*)"open file='topo2' lui=",lui
-         open (lui, file=trim(filepath10km)//'/'//'topo2',
-     &   status='old', access='direct',
-     &   form='unformatted', recl=nlong*2, iostat=ios)
+         ierr = nf90_open(trim(filepath10km)//'/'//'topo2.nc',
+     &     NF90_NOWRITE,ncid)
+         if ( ierr==nf90_noerr ) then
+           ncfile=.true.
+           write(6,*) "Found netcdf version"
+           ierr = nf90_inq_varid(ncid,"topo",varid)
+         else
+           ncfile=.false.
+           open (lui, file=trim(filepath10km)//'/'//'topo2',
+     &     status='old', access='direct',
+     &     form='unformatted', recl=nlong*2, iostat=ios)
+         end if  
          new = .false.
       end if
 
       i = nint((90.0 - lat) * 12.0 + 1.0)
       if ( i.lt.3 ) print *,'i=',i
 
-      read (lui, rec=i, iostat=ios) buf
-
-      do j = 1, nlong
-        ival = 256 * ichar(buf(1,j)) + ichar(buf(2,j))
-        if (ival .ge. 32768) then ! sign extend
-           ival = ival - 65536
-           !ival = ior( ival, X'FFFFFFFFFFFF0000' )
-        end if
-        ht(j) = ival
-      end do
+      if ( ncfile ) then
+        ierr = nf90_get_var(ncid,varid,ht(1:nlong),
+     &    start=(/1,i/),count=(/nlong,1/))
+      else    
+        read (lui, rec=i, iostat=ios) buf
+        do j = 1, nlong
+          ival = 256 * ichar(buf(1,j)) + ichar(buf(2,j))
+          if (ival .ge. 32768) then ! sign extend
+             ival = ival - 65536
+             !ival = ior( ival, X'FFFFFFFFFFFF0000' )
+          end if
+          ht(j) = ival
+        end do
+      end if  
 
       end

@@ -19,35 +19,44 @@
 
 !------------------------------------------------------------------------------
       
-      subroutine read250(nx,ny,lons,lats,dl,debug,idia,jdia,il)
+      subroutine read250(nx,ny,lons,lats,dl,debug,idia,jdia,il,
+     &                   ncid,varid,ncfile)
 
-      use rwork
       use ccinterp
+      use netcdf_m
+      use rwork
 
       integer, intent(in) :: il
+      integer, intent(in) :: ncid, varid
+      integer ierr
       integer jl
-      integer*2 zz(3360*2800)
+      integer(kind=2), dimension(3600*2800) :: zz
+      integer, dimension(nx,ny) :: zz2d
       real dl
       integer nrecl
       real lons,lats
-      parameter ( zmin=-100 )
 
       logical debug,ok,ow
       logical patcha, patchb, patchc
       logical patchd, patche, patchf
+      logical, intent(in) :: ncfile
 
       data ow/.false./
-
-      !include 'newmpar.h'
-      !include 'rwork.h'
 
       jl=6*il
 
       write(6,*)"read250 nx,ny,lons,lats,dl=",nx,ny,lons,lats,dl,debug
 
 ! read data then close file
-      read(13) (zz(i),i=1,nx*ny)
-      close(13)
+      if ( ncfile ) then
+        ierr = nf90_get_var(ncid,varid,zz2d(1:nx,1:ny),
+     &    start=(/1,1/),count=(/nx,ny/))
+        ierr = nf90_close(ncid)
+        zz(1:nx*ny) = reshape( zz2d(1:nx,1:ny), (/ nx*ny /) )
+      else    
+        read(13) (zz(i),i=1,nx*ny)
+        close(13)
+      end if  
       
       ! MJT bug fix
       patcha = ( lons==144.001 .and. lats==-27.9988 )
