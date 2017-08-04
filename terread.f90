@@ -50,7 +50,7 @@
       logical dosrtm1
       logical netout, topfilt
       logical ncfile
-      character*60 fileout
+      character*1024 fileout
       character*9 formout
 
       integer nx,ny
