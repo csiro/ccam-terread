@@ -30,8 +30,8 @@
       integer, intent(in) :: ncid, varid
       integer ierr
       integer jl
-      integer(kind=2), dimension(3600*2800) :: zz
-      integer, dimension(nx,ny) :: zz2d
+      integer(kind=2), dimension(:), allocatable :: zz
+      integer, dimension(:,:), allocatable :: zz2d
       real dl
       integer nrecl
       real lons,lats
@@ -46,6 +46,9 @@
       jl=6*il
 
       write(6,*)"read250 nx,ny,lons,lats,dl=",nx,ny,lons,lats,dl,debug
+      
+      allocate( zz(nx*ny) )
+      allocate( zz2d(nx,ny) )
 
 ! read data then close file
       if ( ncfile ) then
@@ -167,5 +170,8 @@
       enddo ! j
 !#######################################################################
 
+      deallocate( zz )
+      deallocate( zz2d )
+        
       return
       end ! read250
