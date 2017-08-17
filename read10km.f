@@ -104,13 +104,13 @@
 ! sum of squares for sd calc.
              tsd(lci,lcj)=tsd(lci,lcj)+zs**2
 
-             if ( debug ) then
-                if ( lci.eq.idia .and. lcj.eq.jdia ) then
-                  write(6,'("lci,lcj,i,izs(i),zs,zss(),almsk(), inum()="
-     &           ,4i6,3f10.3,i6)') lci,lcj,i,izs(i),zs,zss(lci,lcj)
-     &                       ,almsk(lci,lcj), inum(lci,lcj)
-                endif  ! selected points only
-             endif  ! debug
+!             if ( debug ) then
+!                if ( lci.eq.idia .and. lcj.eq.jdia ) then
+!                  write(6,'("lci,lcj,i,izs(i),zs,zss(),almsk(), inum()="
+!     &           ,4i6,3f10.3,i6)') lci,lcj,i,izs(i),zs,zss(lci,lcj)
+!     &                       ,almsk(lci,lcj), inum(lci,lcj)
+!                endif  ! selected points only
+!             endif  ! debug
              
              end if ! idsrtm
 

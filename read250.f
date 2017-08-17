@@ -91,7 +91,7 @@
            ! MJT bug fix
            if (patcha.and.(jg>=526.and.jg<=527)) cycle
            if (patchb.and.(jg>=334.and.jg<=335)) cycle
-           if (patchc.and.(jg>=706.and.jp<=707)) cycle
+           if (patchc.and.(jg>=706.and.jg<=707)) cycle
            if (patchd.and.(jg>=1538.and.jg<=1539)) cycle
            if (patche.and.(jg>=1.and.jg<=3)) cycle
            if (patchf.and.(jg>=91.and.jg<=92)) cycle
