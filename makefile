@@ -1,6 +1,3 @@
-#Makefile for GLOBPE on NEC SX4   f90 (from mrd)
-
-# Specify any desired preprocessor or compiler flags here; -R2 for .L files.
 
 ifneq ($(CUSTOM),yes)
 FC = ifort
@@ -9,6 +6,7 @@ LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
 INC = -I $(NETCDF_ROOT)/include
 PPFLAG90 = -fpp
 PPFLAG77 = -fpp
+DEBUGFLAG = -check all -debug all -traceback -fpe0
 endif
 
 ifeq ($(GFORTRAN),yes)
@@ -16,6 +14,20 @@ FC = gfortran
 XFLAGS = -O2 -mtune=native -march=native -I $(NETCDF_ROOT)/include
 PPFLAG90 = -x f95-cpp-input
 PPFLAG77 = -x f77-cpp-input
+DEBUGFLAG = -g -Wall -Wextra -fbounds-check -fbacktrace
+endif
+
+ifeq ($(CRAY),yes)
+FC = ftn
+XFLAGS = -h noomp
+PPFLAG90 = -eZ
+PPFLAG77 = -eZ
+DEBUGFLAG =
+endif
+
+# Testing - I/O and fpmodel
+ifeq ($(TEST),yes)
+XFLAGS += $(DEBUGFLAG)
 endif
 
 OBJT = terread.o read_ht.o read1km.o read250.o read10km.o amap.o rwork.o ncdf.o \
