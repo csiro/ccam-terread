@@ -26,20 +26,22 @@
       use netcdf_m
       use rwork
 
-      integer, intent(in) :: il
+      integer, intent(in) :: il, idia, jdia
       integer, intent(in) :: ncid, varid
+      integer, intent(in) :: nx, ny
       integer ierr
       integer jl
       integer(kind=2), dimension(:), allocatable :: zz
       integer, dimension(:,:), allocatable :: zz2d
-      real dl
+      real, intent(in) :: dl
       integer nrecl
-      real lons,lats
+      real, intent(in) :: lons,lats
 
-      logical debug,ok,ow
+      logical ok,ow
       logical patcha, patchb, patchc
       logical patchd, patche, patchf
       logical, intent(in) :: ncfile
+      logical, intent(in) :: debug
 
       data ow/.false./
 
@@ -48,16 +50,15 @@
       write(6,*)"read250 nx,ny,lons,lats,dl=",nx,ny,lons,lats,dl,debug
       
       allocate( zz(nx*ny) )
-      
 
 ! read data then close file
       if ( ncfile ) then
-        allocate( zz2d(nx,ny) )
+        allocate( zz2d(nx,ny) )  
         ierr = nf90_get_var(ncid,varid,zz2d(1:nx,1:ny),
      &    start=(/1,1/),count=(/nx,ny/))
         ierr = nf90_close(ncid)
         zz(1:nx*ny) = reshape( zz2d(1:nx,1:ny), (/ nx*ny /) )
-	deallocate( zz2d )
+        deallocate( zz2d )
       else    
         read(13) (zz(i),i=1,nx*ny)
         close(13)
