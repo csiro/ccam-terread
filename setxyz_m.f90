@@ -81,15 +81,21 @@ subroutine setxyz ( il, jl, kl, npanels, ifull, iquad, diag, id, jd,        &
          eps, dx2, dy2, sumwts, coslong, sinlong, coslat, sinlat, zz, demu11, &
          demv11, demu21, demv21, demu31, demv31 
 
-   integer, dimension(ifull) :: i_nw, i_sw, i_es, i_ws 
-   real(kind=rx), dimension(ifull) :: axx, ayy, azz, bxx, byy, bzz
-   real(kind=rx), dimension(iquad,iquad) :: em4, ax4, ay4, az4, zz4
-   real(kind=rx), dimension(ifull) :: cosa
+   integer, dimension(:), allocatable :: i_nw, i_sw, i_es, i_ws 
+   real(kind=rx), dimension(:), allocatable :: axx, ayy, azz, bxx, byy, bzz
+   real(kind=rx), dimension(:,:), allocatable :: em4, ax4, ay4, az4, zz4
+   real(kind=rx), dimension(:), allocatable :: cosa
 
    integer :: ijk
 !  If abs(cos(lat)) < polelim than assume point is exactly at pole.
    real(kind=rx), parameter :: polelim = 10*epsilon(1.0)
 
+   ! Allocate local arrays
+   allocate( i_nw(ifull), i_sw(ifull), i_es(ifull), i_ws(ifull) ) 
+   allocate( axx(ifull), ayy(ifull), azz(ifull), bxx(ifull), byy(ifull), bzz(ifull) )
+   allocate( em4(iquad,iquad), ax4(iquad,iquad), ay4(iquad,iquad), az4(iquad,iquad), zz4(iquad,iquad) )
+   allocate( cosa(ifull) )
+   
 !  Allocate all the public arrays
    allocate ( xx4(iquad,iquad), yy4(iquad,iquad) )
    allocate ( i_n(ifull),  i_s(ifull), i_w(ifull), i_e(ifull), i_nn(ifull),   &
@@ -902,6 +908,11 @@ subroutine setxyz ( il, jl, kl, npanels, ifull, iquad, diag, id, jd,        &
  
 !!!contains
 
+   deallocate( i_nw, i_sw, i_es, i_ws ) 
+   deallocate( axx, ayy, azz, bxx, byy, bzz )
+   deallocate( em4, ax4, ay4, az4, zz4 )
+   deallocate( cosa )
+   
 end subroutine setxyz
 
 subroutine vecpanel(ax, ay, az) 
