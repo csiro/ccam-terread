@@ -48,14 +48,16 @@
       write(6,*)"read250 nx,ny,lons,lats,dl=",nx,ny,lons,lats,dl,debug
       
       allocate( zz(nx*ny) )
-      allocate( zz2d(nx,ny) )
+      
 
 ! read data then close file
       if ( ncfile ) then
+        allocate( zz2d(nx,ny) )
         ierr = nf90_get_var(ncid,varid,zz2d(1:nx,1:ny),
      &    start=(/1,1/),count=(/nx,ny/))
         ierr = nf90_close(ncid)
         zz(1:nx*ny) = reshape( zz2d(1:nx,1:ny), (/ nx*ny /) )
+	deallocate( zz2d )
       else    
         read(13) (zz(i),i=1,nx*ny)
         close(13)
@@ -171,7 +173,6 @@
 !#######################################################################
 
       deallocate( zz )
-      deallocate( zz2d )
         
       return
       end ! read250

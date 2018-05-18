@@ -1,8 +1,13 @@
 
 ifneq ($(CUSTOM),yes)
 FC = ifort
+ifeq ($(NCCLIB),yes)
+XFLAGS = -O -assume byterecl -fp-model precise -traceback -Dncclib
+LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf
+else
 XFLAGS = -O -assume byterecl -fp-model precise -traceback
 LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
+endif
 INC = -I $(NETCDF_ROOT)/include
 PPFLAG90 = -fpp
 PPFLAG77 = -fpp
