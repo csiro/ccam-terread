@@ -39,7 +39,7 @@
       integer imin,imax,jmin,jmax,iq
       integer, dimension(2) :: iq2
       integer ier,ierr,idnc
-      integer luout
+      integer luout,h,v
 
       parameter (rtd=180.0/3.14159265 )
       parameter ( nter = 37 )
@@ -47,7 +47,7 @@
       logical olam
 
       logical debug, do1km, okx, oky, do250, dosrtm
-      logical dosrtm1
+      logical dosrtm1, do250lsm
       logical netout, topfilt
       logical ncfile
       character*1024 fileout
@@ -57,7 +57,7 @@
       integer i,j
       integer il,jl,ilout
       integer ii,jj,kk,ll,nface,lci,lcj
-      integer lcis,lcjs,incg
+      integer lcis,lcjs,incg,num250lsm
       integer ncid, varid
       integer, dimension(2) :: iq_n, iq_s, iq_e, iq_w
       integer, dimension(2) :: ccdim,pxy
@@ -67,6 +67,7 @@
       integer, dimension(1201) :: i4data
       character*1 ns,ew
       character*1024 file
+      character*1024 modislsm
       character*8 ausfile(nter)
       character*1 esg,nsg
       character*2 ncord
@@ -75,19 +76,21 @@
       character*1024 filepath10km
       character*1024 filepath1km
       character*1024 filepath250m
+      character*1024 filepath250mlsm
       character*1024 filepathsrtm
 
       real lons,lats
       real lone,late
       real cutsrtm,cut10km,cut1km
       real rlong0,rlat0,schmidt,dst
-      real zs,aglon,aglat,alci,alcj
+      real zs,aglon,aglat,alci,alcj,atsd
       real, dimension(2) :: lonlat
       real, dimension(:,:,:), allocatable :: rlld
       
       data debug/.true./
       data do1km/.true./
       data do250/.true./
+      data do250lsm/.false./
       data dosrtm/.false./
       data dosrtm1/.false./
       data netout/.false./
@@ -102,6 +105,7 @@
       data filepath10km/""/
       data filepath1km/""/
       data filepath250m/""/
+      data filepath250mlsm/""/
       data filepathsrtm/""/
 
       namelist / topnml / ds, du, tanl, rnml, stl1, stl2, debug &
@@ -109,7 +113,8 @@
         ,idia, jdia ,rlong0, rlat0, schmidt                     &
         ,do1km, do250, dosrtm, dosrtm1, id, jd, il, netout      &
         ,topfilt, cutsrtm, cut10km, cut1km, incg, filepath10km  &
-        ,filepath1km, filepath250m, filepathsrtm
+        ,filepath1km, filepath250m, filepathsrtm                &
+        ,do250lsm, filepath250mlsm
 
       ! Start banner
       write(6,*) "=============================================================================="
@@ -268,13 +273,12 @@
         idsrtm1(i,j)=0
         idsrtm(i,j)=0
         id250m(i,j)=0
+        id250lsm(i,j)=0
         id1km(i,j)=0
         id10km(i,j)=0
        enddo
       enddo
       
-      write(6,*) 'inum(1,1)=',inum(1,1)
-
       if ( dosrtm1 ) then
           
         write(6,*) "Process dosrtm1"
@@ -472,7 +476,7 @@
         ierr = nf90_open(trim(file)//'.nc',NF90_NOWRITE,ncid)
         if ( ierr==nf90_noerr ) then
           ncfile = .true.
-          write(6,*) "Found netcdf version"
+!         write(6,*) "Found netcdf version"
           ierr = nf90_inq_varid(ncid,"topo",varid)
           ierr = nf90_get_att(ncid,nf90_global,"nx",nx)
           ierr = nf90_get_att(ncid,nf90_global,"ny",ny)
@@ -544,6 +548,97 @@
 
 !================================
       endif ! ( do250 ) then
+!================================
+
+!================================
+      if ( do250lsm ) then
+!================================
+      write(6,*)"Proccess modis 250m lsm files"
+
+      do h = 0,37
+      do v = 0,17
+
+!modis_SRTM-LandWaterMask__LPDAAC__v5__250m-SIN-grid-tile-h31v08__2000-2009.nc
+        write(modislsm,'("modis_SRTM-LandWaterMask__LPDAAC__v5__250m-SIN-grid-tile-h",i2.2,"v",i2.2,"__2000-2009.nc")'),h,v
+        file=trim(filepath250mlsm)//'/'//trim(modislsm)
+        ierr = nf90_open(trim(file),NF90_NOWRITE,ncid)
+
+!=================================================
+        if ( ierr==nf90_noerr ) then
+
+        write(6,*) "modislam=",trim(file)
+!       write(6,*) "Found netcdf file"
+
+        nx=4800
+        ny=4800
+        ncfile = .true.
+        ierr = nf90_inq_varid(ncid,"lwd",varid)
+
+        if ( ierr==nf90_noerr ) then
+
+        lats = min((9.-v)*10.,(9.-(v+1))*10.)
+        late = max((9.-v)*10.,(9.-(v+1))*10.)
+
+        lons = min((h-18.)*10./cos(lats/rtd),(h-18.)*10./cos(late/rtd))
+        lons = min(lons,((h+1)-18.)*10./cos(lats/rtd),((h+1)-18.)*10./cos(late/rtd))
+        lone = max((h-18.)*10./cos(lats/rtd),(h-18.)*10./cos(late/rtd))
+        lone = max(lone,((h+1)-18.)*10./cos(lats/rtd),((h+1)-18.)*10./cos(late/rtd))
+
+        okx = .false.
+        okx = okx .or. (lons.ge.rlonn .and. lons.le.rlonx)
+        okx = okx .or. (lone.ge.rlonn .and. lone.le.rlonx)
+        okx = okx .or. (lons.le.rlonn .and. lone.ge.rlonx)
+        oky = .false.
+        oky = oky .or. (lats.ge.rlatn .and. lats.le.rlatx) ! start lat in area
+        oky = oky .or. (late.ge.rlatn .and. late.le.rlatx) !  end  lat in area
+        oky = oky .or. (lats.le.rlatn .and. late.ge.rlatx) ! grid encompasses hr reg
+        oky = oky .or. (lats.ge.rlatn .and. late.le.rlatx) ! grid within hr reg
+!       okx=.true.
+!       oky=.true.
+
+!       write(6,'("rlonn,rlonx=",2f7.1," rlatn,rlatx=",2f7.1)') rlonn,rlonx,rlatn,rlatx
+!       write(6,'("lons,lone=",2f7.1," lats,late=",2f7.1)') lons,lone,lats,late
+!       write(6,'("okx,oky=",2l4," nx,ny=",2i6,a10)') okx,oky,nx,ny
+
+        if ( okx.and.oky ) then
+          write(6,*)"call read250lsm(nx,ny,lons,lats,dl,debug,idia,jdia,il,ncid,varid,ncfile,h,v)"
+          call read250lsm(nx,ny,lons,lats,dl,debug,idia,jdia,il,ncid,varid,ncfile,h,v)
+        endif
+
+        end if  ! ierr var
+
+        end if  ! ierr file
+
+      enddo ! v
+      enddo ! h
+! end of loop over all modis panels
+
+      write(6,*)"id250lsm"
+      do j=96,49,-1
+       write(6,'(48i2)')(id250lsm(i,j),i=1,48)
+      enddo
+
+      write(6,*)"almsk"
+      num250lsm=0 ! count number of grid points that have modis l/s mask data
+      do j=1,jl
+        do i=1,il
+          if ( id250lsm(i,j) .gt. 0 ) then
+             inumx(i,j)=nint(real(lsmask(i,j))/real(id250lsm(i,j)))
+             num250lsm=num250lsm+1
+          else
+             inumx(i,j)=0
+          endif
+        enddo !i=1,il
+      enddo !j=1,jl
+
+      do j=96,49,-1
+       write(6,'(48i2)')(inumx(i,j),i=1,48)
+      enddo
+
+      write(6,*)"Done with modis 250m files  num250lsm=",num250lsm
+
+!================================
+      endif ! ( do250lsm ) then
 !================================
 
 !================================
@@ -707,8 +802,6 @@
        write(6,'(48i2)')(nint(zss(i,j)/10/real(inum(i,j))),i=1,48)
       enddo
 
-
-
       ! PATCH !!!!
       Do i=1,il
         Do j=1,jl
@@ -724,8 +817,8 @@
         End Do
       End Do
 
-
       write(6,*)"now compute grid average values"
+
       numzer=0
       imin=9999
       jmin=9999
@@ -734,9 +827,28 @@
 
       do j=1,jl
        do i=1,il
-          !write(6,*)i,j,inum(i,j),zss(i,j)
+
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+          if ( do250lsm .and. num250lsm .gt. 0 ) then
+! set land-sea mask (rmsk) if using modis land-sea mask
+           if ( id250lsm(i,j) .gt. 0 ) then
+! here lsmask is accumlated ocean points
+! so lsmask is zero over ocean
+             almsk(i,j) = lsmask(i,j)/real(id250lsm(i,j))
+! assume land point if less than half of pnts are water
+             if ( almsk(i,j) .ge. 0.5 ) then
+               rmsk(i,j) = 1.
+             else 
+               rmsk(i,j) = 0.
+             endif 
+           endif
+           !write(6,*)i,j,inum(i,j),zss(i,j)
+          endif !( do250lsm )
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+
           if ( inum(i,j).eq.0 ) then
-! no input points found, assume sea point
+! no input points found, assume sea level
+! but fills in using neighboring points below
              numzer=numzer+1
              imin=min(i,imin)
              imax=max(i,imax)
@@ -748,31 +860,42 @@
              tmin(i,j)= 0.
              tmax(i,j)= 0.
           else
-! set land-sea mask (rmsk)
-             almsk(i,j) = almsk(i,j)/real(inum(i,j))
+! now case where inum ne 0
              zss(i,j) = zss(i,j)/real(inum(i,j))
-	     
-! if less than half of pnts are ocean, assume it is land pnt
-             if ( almsk(i,j).le. 0.5 ) then
-! ocean point
-                rmsk(i,j) = 0.
-                zss(i,j)=0. ! jjk added 18-8-2004
-                tsd(i,j)=0. !mjt 12-5-05
-		        tmax(i,j)=0. !mjt 12-5-05
-		        tmin(i,j)=0. !mjt 12-5-05
-             else ! almsk
-! land point
-                rmsk(i,j) = 1.
-                zss(i,j)=max(.1,zss(i,j))
-             endif ! almsk
 ! compute sd
              tsd(i,j)=sqrt(abs(tsd(i,j)/real(inum(i,j))-zss(i,j)**2)) ! abs for rounding?
 !            tsd(i,j)=sqrt(tsd(i,j)/real(inum(i,j))-zss(i,j)**2)
-          end if
+
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+! if no modis land-sea data, do following
+             if ( id250lsm(i,j) .eq. 0 ) then
+
+! compute fraction of gribbox with land
+               almsk(i,j) = almsk(i,j)/real(inum(i,j))
+
+! if less than half of gridbox is ocean, assume it is land pnt
+               if ( almsk(i,j).le. 0.5 ) then
+! ocean point
+                 rmsk(i,j) = 0.
+                 zss(i,j)=0. ! jjk added 18-8-2004
+                 tsd(i,j)=0. !mjt 12-5-05
+                 tmax(i,j)=0. !mjt 12-5-05
+                 tmin(i,j)=0. !mjt 12-5-05
+               else ! almsk
+! land point
+                 rmsk(i,j) = 1.
+                 zss(i,j)=max(.1,zss(i,j))
+               endif ! almsk
+
+             endif !( id250lsm )
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+
+          end if ! inum
 
        enddo ! i
       enddo ! j
 
+! first fill 
 2     if(numzer.gt.0)then
 !       this checks for non-data points, and inserts a neighbouring value
         print *,'**** numzer= ',numzer
@@ -805,7 +928,7 @@
             endif
             if(iq2(1).ne.0)then
               zss(i,j)=zss(iq2(1),iq2(2))
-              rmsk(i,j)=rmsk(iq2(1),iq2(2))
+              if ( .not. do250lsm ) rmsk(i,j)=rmsk(iq2(1),iq2(2))
               tsd(i,j)=tsd(iq2(1),iq2(2))
               tmin(i,j)=tmin(iq2(1),iq2(2))
               tmax(i,j)=tmax(iq2(1),iq2(2))
@@ -824,6 +947,82 @@
         enddo ! j
       endif         ! (numzer.gt.0)
       if(numzer.gt.0)go to 2
+! first fill 
+
+! second fill to fix tsd
+! now fill in tsd where only one data point exists over land
+        numzer=0
+        do j=1,jl
+         do i=1,il
+          if ( inum(i,j) .eq. 1 .and. zss(i,j) .gt. .1 ) then
+            numzer=numzer+1
+            inumx(i,j)=0
+          else
+            inumx(i,j)=1
+          endif
+         enddo ! i
+        enddo ! j
+
+3     if(numzer.gt.0)then
+!       this checks for non-data points, and inserts a neighbouring value
+        print *,'**** numzer= ',numzer
+        numzer=0
+        do j=1,jl
+         do i=1,il
+          iq=i+(j-1)*il
+          almsk(i,j)=inumx(i,j)
+          atsd=0.
+          ii=0
+          if(inumx(i,j).eq.0)then
+            iq2(:)=0
+            iq_n(2) = (in(iq)-1)/il + 1
+            iq_n(1) = in(iq) - (iq_n(2)-1)*il
+            if(inumx(iq_n(1),iq_n(2)).ne.0)then
+              atsd=atsd+tsd(iq_n(1),iq_n(2))
+              iq2(:)=iq_n(:)
+              ii=ii+1
+            endif
+            iq_e(2) = (ie(iq)-1)/il + 1
+            iq_e(1) = ie(iq) - (iq_e(2)-1)*il
+            if(inumx(iq_e(1),iq_e(2)).ne.0)then
+              atsd=atsd+tsd(iq_e(1),iq_e(2))
+              iq2(:)=iq_e(:)
+              ii=ii+1
+            endif
+            iq_w(2) = (iw(iq)-1)/il + 1
+            iq_w(1) = iw(iq) - (iq_w(2)-1)*il
+            if(inumx(iq_w(1),iq_w(2)).ne.0)then
+              atsd=atsd+tsd(iq_w(1),iq_w(2))
+              iq2(:)=iq_w(:)
+              ii=ii+1
+            endif
+            iq_s(2) = (is(iq)-1)/il + 1
+            iq_s(1) = is(iq) - (iq_s(2)-1)*il
+            if(inumx(iq_s(1),iq_s(2)).ne.0)then
+              atsd=atsd+tsd(iq_s(1),iq_s(2))
+              iq2(:)=iq_s(:)
+              ii=ii+1
+            endif
+            if(ii.ne.0)then
+              !tsd(i,j)=tsd(iq2(1),iq2(2))
+              tsd(i,j)=atsd/real(ii)
+              tmin(i,j)=tmin(iq2(1),iq2(2))
+              tmax(i,j)=tmax(iq2(1),iq2(2))
+              almsk(i,j)=1
+            else
+              numzer=numzer+1
+            endif    !  (iq2.ne.0)
+          endif      !  (inum(i,j).eq.0)
+         enddo
+        enddo
+        do j=1,jl
+         do i=1,il
+          inumx(i,j)=nint(almsk(i,j))
+         enddo ! i
+        enddo ! j
+      endif         ! (numzer.gt.0)
+      if(numzer.gt.0)go to 3
+!fix tsd
       
       if (topfilt) then
         write(6,*) "Filter orography"
@@ -893,42 +1092,60 @@
 
       do j=1,jl
         do i=1,il
-          zss(i,j)=real(inum(i,j))
+          zss(i,j)=real(inum(i,j)) ! tmp array for printing
         end do ! i=1,il
       end do ! j=1,jl
       call nc2out(zss,il,jl,1,1.,idnc,"inum","inum","none",0.,2000.)
 
       do j=1,jl
         do i=1,il
-          zss(i,j)=real(idsrtm1(i,j))
+          zss(i,j)=real(idsrtm1(i,j)) ! tmp array for printing
         end do ! i=1,il
       end do ! j=1,jl
       call nc2out(zss,il,jl,1,1.,idnc,"idsrtm1","idsrtm1","none",0.,2000.)
 
       do j=1,jl
         do i=1,il
-          zss(i,j)=real(idsrtm(i,j))
+          zss(i,j)=real(idsrtm(i,j)) ! tmp array for printing
         end do ! i=1,il
       end do ! j=1,jl
       call nc2out(zss,il,jl,1,1.,idnc,"idsrtm","idsrtm","none",0.,2000.)
 
       do j=1,jl
         do i=1,il
-          zss(i,j)=real(id250m(i,j))
+          zss(i,j)=real(id250m(i,j)) ! tmp array for printing
         end do ! i=1,il
       end do ! j=1,jl
       call nc2out(zss,il,jl,1,1.,idnc,"id250m","id250m","none",0.,2000.)
 
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+      if ( do250lsm ) then
       do j=1,jl
         do i=1,il
-          zss(i,j)=real(id1km(i,j))
+          zss(i,j)=(lsmask(i,j)) ! tmp array for printing
+        end do ! i=1,il
+      end do ! j=1,jl
+      call nc2out(zss,il,jl,1,1.,idnc,"lsmask","lsmask","none",0.,100.)
+
+      do j=1,jl
+        do i=1,il
+          zss(i,j)=real(id250lsm(i,j)) ! tmp array for printing
+        end do ! i=1,il
+      end do ! j=1,jl
+      call nc2out(zss,il,jl,1,1.,idnc,"id250lsm","id250lsm","none",0.,2000.)
+      endif
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+
+      do j=1,jl
+        do i=1,il
+          zss(i,j)=real(id1km(i,j)) ! tmp array for printing
         end do ! i=1,il
       end do ! j=1,jl
       call nc2out(zss,il,jl,1,1.,idnc,"id1km","id1km","none",0.,2000.)
 
       do j=1,jl
         do i=1,il
-          zss(i,j)=real(id10km(i,j))
+          zss(i,j)=real(id10km(i,j)) ! tmp array for printing
         end do ! i=1,il
       end do ! j=1,jl
       call nc2out(zss,il,jl,1,1.,idnc,"id10km","id10km","none",0.,2000.)
