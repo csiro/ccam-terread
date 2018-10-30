@@ -17,6 +17,7 @@
 /read10km.f -text
 /read1km.f -text
 /read250.f -text
+/read250lsm.f -text
 /read_ht.f -text
 /rwork.f90 -text
 /setxyz_m.f90 -text
