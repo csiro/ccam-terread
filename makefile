@@ -38,7 +38,7 @@ endif
 OBJT = terread.o read_ht.o read1km.o read250.o read10km.o amap.o rwork.o ncdf.o \
        ccinterp.o latltoij_m.o setxyz_m.o xyzinfo_m.o newmpar_m.o \
        indices_m.o parm_m.o precis_m.o ind_m.o jimco_m.o jimcc_m.o \
-       jim_utils.o nfft_m.o netcdf_m.o stacklimit.o
+       jim_utils.o nfft_m.o netcdf_m.o stacklimit.o read250lsm.o
 
 terread :$(OBJT)
 	$(FC) $(XFLAGS) $(OBJT) $(LIBS) -o terread
@@ -69,6 +69,7 @@ FORCE:
 
 terread.o : ccinterp.o rwork.o netcdf_m.o version.h
 read250.o : ccinterp.o rwork.o netcdf_m.o
+read250lsm.o : ccinterp.o rwork.o netcdf_m.o
 read1km.o : ccinterp.o rwork.o netcdf_m.o
 read10km.o : ccinterp.o rwork.o
 read_ht.o : netcdf_m.o
