@@ -1,1 +1,1 @@
-      character(len=*), parameter :: version ='TERREAD r3910M'
+      character(len=*), parameter :: version ='TERREAD r4127M'
