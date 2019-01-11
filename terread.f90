@@ -559,7 +559,7 @@
       do v = 0,17
 
 !modis_SRTM-LandWaterMask__LPDAAC__v5__250m-SIN-grid-tile-h31v08__2000-2009.nc
-        write(modislsm,'("modis_SRTM-LandWaterMask__LPDAAC__v5__250m-SIN-grid-tile-h",i2.2,"v",i2.2,"__2000-2009.nc")'),h,v
+        write(modislsm,'("modis_SRTM-LandWaterMask__LPDAAC__v5__250m-SIN-grid-tile-h",i2.2,"v",i2.2,"__2000-2009.nc")') h,v
         file=trim(filepath250mlsm)//'/'//trim(modislsm)
         ierr = nf90_open(trim(file),NF90_NOWRITE,ncid)
 
