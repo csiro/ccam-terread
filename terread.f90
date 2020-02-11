@@ -29,7 +29,7 @@
       
       include 'version.h'
       
-      real rtd,dl,dlh,clons,clats
+      real rtd,dl,dlh,clons,clats,plon
       real ds,gridn,gridx
       real dlon,dlat
       real sbd,wbd,stl1,stl2
@@ -828,6 +828,15 @@
       do j=1,jl
        do i=1,il
 
+         if ( rlond(i,j) .lt. 0. ) then
+            plon=rlond(i,j)+360.
+         else
+            plon=rlond(i,j)
+         endif
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+! to avoid using modis 250m lsm mask near dateline dues to missing data points in input dataset
+! this will use the existing (srtm?) terrain data to define land/sea mask
+         if ( plon .lt. 179. .or. plon .gt. 181. ) then
 !mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
           if ( do250lsm .and. num250lsm .gt. 0 ) then
 ! set land-sea mask (rmsk) if using modis land-sea mask
@@ -844,6 +853,10 @@
            endif
            !write(6,*)i,j,inum(i,j),zss(i,j)
           endif !( do250lsm )
+!mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+         else
+          id250lsm(i,j)=0
+         endif ! [[ rlond(i,j) .ge. 170. .and. rlond(i,j) .le. 180. ]]then
 !mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 
           if ( inum(i,j).eq.0 ) then
