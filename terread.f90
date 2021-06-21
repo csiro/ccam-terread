@@ -131,10 +131,10 @@
       write(6,*) "Reading topnml namelist"
 #ifdef unitnml
       open( unit=99, file='top.nml', status='old')
-      read( 99, topnml )
+      read( 99, NML=topnml )
       close( 99 )
 #else
-      read ( 5,topnml )
+      read ( 5,NML=topnml )
 #endif
       write(6,*) "Finished reading namelist"
       write ( 6,topnml )
