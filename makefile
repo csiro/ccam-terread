@@ -28,6 +28,17 @@ PPFLAG77 = -eZ
 DEBUGFLAG =
 endif
 
+ifeq ($(MAUI),yes)
+FC = ftn
+XFLAGS = -O -assume byterecl -fp-model precise -traceback
+LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
+INC = -I $(NETCDF_ROOT)/include
+PPFLAG90 = -fpp
+PPFLAG77 = -fpp
+DEBUGFLAG = -check all -debug all -traceback -fpe0
+endif
+
+
 # Testing - I/O and fpmodel
 ifeq ($(TEST),yes)
 XFLAGS += $(DEBUGFLAG)
