@@ -1,6 +1,9 @@
 
 ifneq ($(CUSTOM),yes)
 FC = ifort
+ifeq ($(MAGNUS),yes)
+FC = ftn
+endif
 XFLAGS = -O -assume byterecl -fp-model precise -traceback
 LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf
 ifneq ($(NCCLIB),yes)
