@@ -1,13 +1,7 @@
 
 ifneq ($(CUSTOM),yes)
 FC = ifort
-ifeq ($(MAGNUS),yes)
-FC = ftn
-endif
-XFLAGS = -O -xHost -assume byterecl -fp-model precise -traceback
-ifeq ($(ZEN3),yes)
-XFLAGS = -O -axCORE-AVX2 -assume byterecl -fp-model precise -traceback
-endif
+XFLAGS = -O -assume byterecl -fp-model precise -traceback
 LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf
 ifneq ($(NCCLIB),yes)
 LIBS += -lnetcdff
@@ -21,9 +15,6 @@ endif
 ifeq ($(GFORTRAN),yes)
 FC = gfortran
 XFLAGS = -O2 -mtune=native -march=native -I $(NETCDF_ROOT)/include
-ifeq ($(ZEN3),yes)
-XFLAGS = -O2 -fallow-argument-mismatch -mtune=native -march=native -I $(NETCDF_ROOT)/include
-endif
 PPFLAG90 = -x f95-cpp-input
 PPFLAG77 = -x f77-cpp-input
 DEBUGFLAG = -g -Wall -Wextra -fbounds-check -fbacktrace
@@ -36,17 +27,6 @@ PPFLAG90 = -eZ
 PPFLAG77 = -eZ
 DEBUGFLAG =
 endif
-
-ifeq ($(MAUI),yes)
-FC = ftn
-XFLAGS = -O -assume byterecl -fp-model precise -traceback
-LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
-INC = -I $(NETCDF_ROOT)/include
-PPFLAG90 = -fpp
-PPFLAG77 = -fpp
-DEBUGFLAG = -check all -debug all -traceback -fpe0
-endif
-
 
 # Testing - I/O and fpmodel
 ifeq ($(TEST),yes)
@@ -76,9 +56,9 @@ stacklimit.o: stacklimit.c
 	cc -c stacklimit.c
 version.h: FORCE
 	rm -f brokenver tmpver
-	echo "      character(len=*), parameter :: version ='TERREAD r'" > brokenver
-	echo "      character(len=*), parameter :: version ='TERREAD r`svnversion .`'" > tmpver
-	grep exported tmpver || grep Unversioned tmpver || cmp tmpver brokenver || cmp tmpver version.h || mv tmpver version.h
+	echo "      character(len=*), parameter :: version ='TERREAD '" > brokenver
+	echo "      character(len=*), parameter :: version ='TERREAD `git log | head -3 | tail -1`'" > tmpver
+	cmp tmpver brokenver || cmp tmpver version.h || mv tmpver version.h
 FORCE:
 
 .f90.o:
