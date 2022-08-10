@@ -24,6 +24,7 @@ ifeq ($(SETONIX),yes)
 FC = ftn
 XFLAGS = -O2 -mtune=native -march=native -fallow-argument-mismatch -Dncclib
 INC =
+LIBS = -lnetcdf
 PPFLAG90 = -x f95-cpp-input
 PPFLAG77 = -x f77-cpp-input
 DEBUGFLAG = -g -Wall -Wextra -fbounds-check -fbacktrace
