@@ -1,6 +1,6 @@
 ! Conformal Cubic Atmospheric Model
     
-! Copyright 2015-2017 Commonwealth Scientific Industrial Research Organisation (CSIRO)
+! Copyright 2015-2022 Commonwealth Scientific Industrial Research Organisation (CSIRO)
     
 ! This file is part of the Conformal Cubic Atmospheric Model (CCAM)
 !
@@ -34,7 +34,7 @@
       real dlon,dlat
       real sbd,wbd,stl1,stl2
       real du,tanl,rnml
-      integer nter,n
+      integer nter,n,nproc
       integer idia,jdia,id,jd,numzer
       integer imin,imax,jmin,jmax,iq
       integer, dimension(2) :: iq2
@@ -59,6 +59,10 @@
       integer ii,jj,kk,ll,nface,lci,lcj
       integer lcis,lcjs,incg,num250lsm
       integer ncid, varid
+      integer il_old, nproc_old, work_old, helm_old, nxp_old, nyp_old
+      integer il_test, nproc_test, work_test, helm_test, nxp_test, nyp_test
+      integer il_new, nproc_new, work_new, helm_new
+      integer il_max
       integer, dimension(2) :: iq_n, iq_s, iq_e, iq_w
       integer, dimension(2) :: ccdim,pxy
       integer, dimension(:), allocatable :: in,ie,is,iw
@@ -100,7 +104,7 @@
       data il/48/
       data ds/0./
       data cutsrtm/0./,cut10km/0./,cut1km/0./
-      data incg/0/
+      data incg/0/,nproc/-1/
       data fileout/"top.nc"/
       data filepath10km/""/
       data filepath1km/""/
@@ -114,7 +118,7 @@
         ,do1km, do250, dosrtm, dosrtm1, id, jd, il, netout      &
         ,topfilt, cutsrtm, cut10km, cut1km, incg, filepath10km  &
         ,filepath1km, filepath250m, filepathsrtm                &
-        ,do250lsm, filepath250mlsm
+        ,do250lsm, filepath250mlsm, nproc
 
       ! Start banner
       write(6,*) "=============================================================================="
@@ -122,17 +126,58 @@
       write(6,*) "=============================================================================="
       write(6,*) version
       
-#ifndef stacklimit
-      ! For linux only - removes stacklimit on all processors
-      call setstacklimit(-1)
-#endif      
+!#ifndef stacklimit
+!      ! For linux only - removes stacklimit on all processors
+!      call setstacklimit(-1)
+!#endif      
       
-      !open ( unit=5,file='top.nml',status='old' ) ! MJT notes - why open unit=5?
       write(6,*) "Reading topnml namelist"
-      read ( 5,topnml )
+#ifdef unitnml
+      open( unit=99, file='top.nml', status='old')
+      read( 99, NML=topnml )
+      close( 99 )
+#else
+      read ( 5,NML=topnml )
+#endif
       write(6,*) "Finished reading namelist"
       write ( 6,topnml )
 
+      
+      ! optimise grid for requested processors
+      if ( nproc > 0 ) then
+        il_old = il       ! store original grid size
+        call reducenproc(5,il_old,nproc,nproc_old,nxp_old,nyp_old)
+        work_old = il_old**2*6/nproc_old ! estimated work with current grid size
+        call helm_check(il_old,helm_old)
+        nproc_new = nproc_old ! store expected nproc
+        il_new = il_old       ! store expected grid size
+        work_new = work_old   ! store expected work     
+        helm_new = helm_old
+        il_max = 2*il_new*ceiling(sqrt(real(nproc)/real(nproc_old))) ! estimate maximum grid size
+        do il_test = il+1,il_max
+          call reducenproc(5,il_test,nproc,nproc_test,nxp_test,nyp_test)
+          if ( nproc_test <= nproc ) then
+            work_new = il_new**2*6/nproc_new     ! work with the expected grid size
+            work_test = il_test**2*6/nproc_test  ! work with the trial grid size
+            if ( work_test < work_new ) then
+              call helm_check(il_test,helm_test)
+              if ( helm_test >= helm_new ) then
+                il_new = il_test       ! update grid size if trial is successful
+                nproc_new = nproc_test ! update nproc if trial is successful
+                helm_new = helm_test
+              end if  
+            end if
+          end if  
+        end do
+        write(6,*) "Optimise grid with:"
+        write(6,*) "-> original il, new il       = ",il_old,il_new
+        write(6,*) "-> original nproc, new nproc = ",nproc_old,nproc_new
+        write(6,*) "-> original work, new work   = ",work_old,work_new
+        write(6,*) "-> original helm, new helm   = ",helm_old,helm_new
+        il = il_new
+      end if    
+      
+      
       jl=6*il 
       call rworkalloc(il)
 
@@ -1180,4 +1225,57 @@
       
       stop
       end
+    
+      subroutine reducenproc(npanels,il_g,nproc,newnproc,nxp,nyp)
+      implicit none
+      integer, intent(in) :: il_g, nproc, npanels
+      integer, intent(out) :: newnproc, nxp, nyp
+      integer nproc_low, nxp_test, nyp_test
+      nxp_test = 0
+      nyp_test = 0
+      ! try face decompositoin
+      do nproc_low = nproc,1,-1
+        call proctest_face(npanels,il_g,nproc_low,nxp_test,nyp_test)
+        if ( nxp_test>0 ) exit
+      end do
+      newnproc = nproc_low
+      nxp = nxp_test
+      nyp = nyp_test
+      return
+      end subroutine reducenproc    
+    
+      subroutine proctest_face(npanels,il_g,nproc,nxp,nyp)
+      implicit none
+      integer, intent(in) :: il_g, nproc, npanels
+      integer, intent(out) :: nxp, nyp
+      integer jl_g
+      if ( mod(nproc,6)/=0 .and. mod(6,nproc)/=0 ) then
+        nxp = -1
+        nyp = -1
+      else
+        jl_g = il_g + npanels*il_g                 ! size of grid along all panels (usually 6*il_g)
+        nxp = max( 1, nint(sqrt(real(nproc)/6.)) ) ! number of processes in X direction
+        nyp = nproc/nxp                            ! number of processes in Y direction
+        ! search for valid process decomposition.  CCAM enforces the same grid size on each process
+        do while ( (mod(il_g,max(nxp,1))/=0.or.mod(nproc/6,max(nxp,1))/=0.or.mod(jl_g,max(nyp,1))/=0) .and. nxp>0 )
+          nxp = nxp - 1
+          nyp = nproc/max(nxp,1)
+        end do
+      end if
+      return
+      end subroutine proctest_face    
+    
+      subroutine helm_check(il_g,g)
+      implicit none
+      integer, intent(in) :: il_g
+      integer, intent(out) :: g
+      integer gp
+      g = 1
+      gp = 2
+      do while ( mod( il_g, gp )==0 )
+        g = g + 1
+        gp = 2*gp
+      end do
+      return
+      end subroutine helm_check
 !=======================================================================

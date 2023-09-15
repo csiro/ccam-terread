@@ -50,7 +50,7 @@ endif
 OBJT = terread.o read_ht.o read1km.o read250.o read10km.o amap.o rwork.o ncdf.o \
        ccinterp.o latltoij_m.o setxyz_m.o xyzinfo_m.o newmpar_m.o \
        indices_m.o parm_m.o precis_m.o ind_m.o jimco_m.o jimcc_m.o \
-       jim_utils.o nfft_m.o netcdf_m.o stacklimit.o read250lsm.o
+       jim_utils.o nfft_m.o netcdf_m.o read250lsm.o
 
 terread :$(OBJT)
 	$(FC) $(XFLAGS) $(OBJT) $(LIBS) -o terread
@@ -62,8 +62,6 @@ clean:
 
 .SUFFIXES:.f90
 
-stacklimit.o: stacklimit.c
-	cc -c stacklimit.c
 version.h: FORCE
 	rm -f brokenver tmpver
 	echo "character(len=*), parameter :: version = &" > brokenver
