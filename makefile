@@ -3,9 +3,6 @@ ifneq ($(CUSTOM),yes)
 FC = ifort
 XFLAGS = -O -assume byterecl -fp-model precise -traceback
 LIBS = -L $(NETCDF_ROOT)/lib -lnetcdf
-ifneq ($(NCCLIB),yes)
-LIBS += -lnetcdff
-endif
 INC = -I $(NETCDF_ROOT)/include
 PPFLAG90 = -fpp
 PPFLAG77 = -fpp
@@ -41,10 +38,6 @@ endif
 # Testing - I/O and fpmodel
 ifeq ($(TEST),yes)
 XFLAGS += $(DEBUGFLAG)
-endif
-
-ifeq ($(NCCLIB),yes)
-XFLAGS += -Dncclib
 endif
 
 OBJT = terread.o read_ht.o read1km.o read250.o read10km.o amap.o rwork.o ncdf.o \
