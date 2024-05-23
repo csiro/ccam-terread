@@ -281,15 +281,15 @@
       !write(98,'(30f6.2)') rlond
       !write(99,'(30f6.2)') rlatd
 
-      write(6,*)"grid spc(km)"
-      do j=1,jl
-        do i=1,il
-          inumx(i,j)= nint(grid(i,j))
-        enddo !i=1,il
-      enddo !j=1,jl
-      do j=96,49,-1
-       write(6,'(48i2)')(inumx(i,j),i=1,48)
-      enddo
+      !write(6,*)"grid spc(km)"
+      !do j=1,jl
+      !  do i=1,il
+      !    inumx(i,j)= nint(grid(i,j))
+      !  enddo !i=1,il
+      !enddo !j=1,jl
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
+      !enddo
 
 !     nested model topography (output)
       if (.not.netout) then
@@ -555,38 +555,38 @@
 
       enddo ! n
 
-      write(6,*)"inum"
-      do j=96,49,-1
-       write(6,'(48i2)')(inum(i,j),i=1,48)
-      enddo
+      !write(6,*)"inum"
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inum(i,j),i=1,48)
+      !enddo
 
-      write(6,*)"almsk"
-      do j=1,jl
-        do i=1,il
-          if ( inum(i,j) .gt. 0 ) then
-             inumx(i,j)=nint(real(almsk(i,j))/real(inum(i,j)))
-          else
-             inumx(i,j)=0
-          endif
-        enddo !i=1,il
-      enddo !j=1,jl
-      do j=96,49,-1
-       write(6,'(48i2)')(inumx(i,j),i=1,48)
-      enddo
+      !write(6,*)"almsk"
+      !do j=1,jl
+      !  do i=1,il
+      !    if ( inum(i,j) .gt. 0 ) then
+      !       inumx(i,j)=nint(real(almsk(i,j))/real(inum(i,j)))
+      !    else
+      !       inumx(i,j)=0
+      !    endif
+      !  enddo !i=1,il
+      !enddo !j=1,jl
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
+      !enddo
 
-      write(6,*)"zss/10"
-      do j=1,jl
-        do i=1,il
-          if ( inum(i,j) .gt. 0 ) then
-             inumx(i,j)=nint(zss(i,j)/(10.*real(inum(i,j))))
-          else
-             inumx(i,j)=0
-          endif
-        enddo !i=1,il
-      enddo !j=1,jl
-      do j=96,49,-1
-       write(6,'(48i2)')(inumx(i,j),i=1,48)
-      enddo
+      !write(6,*)"zss/10"
+      !do j=1,jl
+      !  do i=1,il
+      !    if ( inum(i,j) .gt. 0 ) then
+      !       inumx(i,j)=nint(zss(i,j)/(10.*real(inum(i,j))))
+      !    else
+      !       inumx(i,j)=0
+      !    endif
+      !  enddo !i=1,il
+      !enddo !j=1,jl
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
+      !enddo
 
 
       write(6,*)"Done with Australian 250m files"
@@ -658,10 +658,10 @@
       enddo ! h
 ! end of loop over all modis panels
 
-      write(6,*)"id250lsm"
-      do j=96,49,-1
-       write(6,'(48i2)')(id250lsm(i,j),i=1,48)
-      enddo
+      !write(6,*)"id250lsm"
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(id250lsm(i,j),i=1,48)
+      !enddo
 
       write(6,*)"almsk"
       num250lsm=0 ! count number of grid points that have modis l/s mask data
@@ -676,9 +676,9 @@
         enddo !i=1,il
       enddo !j=1,jl
 
-      do j=96,49,-1
-       write(6,'(48i2)')(inumx(i,j),i=1,48)
-      enddo
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
+      !enddo
 
       write(6,*)"Done with modis 250m files  num250lsm=",num250lsm
 
@@ -778,10 +778,10 @@
 
       write(6,*)"after do1km"
 
-      write(6,*)"inum"
-      do j=96,49,-1
-       write(6,'(48i2)')(inum(i,j),i=1,48)
-      enddo
+      !write(6,*)"inum"
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inum(i,j),i=1,48)
+      !enddo
 
 !     write(6,*)"almsk"
 !     do j=96,49,-1
@@ -792,33 +792,33 @@
 !      write(6,'(48i2)')(nint(zss(i,j)/10/real(inum(i,j))),i=1,48)
 !     enddo
 
-      write(6,*)"almsk"
-      do j=1,jl
-        do i=1,il
-          if ( inum(i,j) .gt. 0 ) then
-             inumx(i,j)=nint(almsk(i,j)/real(inum(i,j)))
-          else
-             inumx(i,j)=0
-          endif
-        enddo !i=1,il
-      enddo !j=1,jl
-      do j=96,49,-1
-       write(6,'(48i2)')(inumx(i,j),i=1,48)
-      enddo
+      !write(6,*)"almsk"
+      !do j=1,jl
+      !  do i=1,il
+      !    if ( inum(i,j) .gt. 0 ) then
+      !       inumx(i,j)=nint(almsk(i,j)/real(inum(i,j)))
+      !    else
+      !       inumx(i,j)=0
+      !    endif
+      !  enddo !i=1,il
+      !enddo !j=1,jl
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
+      !enddo
 
-      write(6,*)"zss/10"
-      do j=1,jl
-        do i=1,il
-          if ( inum(i,j) .gt. 0 ) then
-             inumx(i,j)= nint(zss(i,j)/10/real(inum(i,j)))
-          else
-             inumx(i,j)=0
-          endif
-        enddo !i=1,il
-      enddo !j=1,jl
-      do j=96,49,-1
-       write(6,'(48i2)')(inumx(i,j),i=1,48)
-      enddo
+      !write(6,*)"zss/10"
+      !do j=1,jl
+      !  do i=1,il
+      !    if ( inum(i,j) .gt. 0 ) then
+      !       inumx(i,j)= nint(zss(i,j)/10/real(inum(i,j)))
+      !    else
+      !       inumx(i,j)=0
+      !    endif
+      !  enddo !i=1,il
+      !enddo !j=1,jl
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
+      !enddo
 
       write(6,*)"Done with DEM files"
 
@@ -834,18 +834,18 @@
 !================================
 
       write(6,*)"after read10km"
-      write(6,*)"inum"
-      do j=96,49,-1
-       write(6,'(48i2)')(inum(i,j),i=1,48)
-      enddo
-      write(6,*)"almsk"
-      do j=96,49,-1
-       write(6,'(48i2)')(nint(almsk(i,j)/real(inum(i,j))),i=1,48)
-      enddo
-      write(6,*)"zss"
-      do j=96,49,-1
-       write(6,'(48i2)')(nint(zss(i,j)/10/real(inum(i,j))),i=1,48)
-      enddo
+      !write(6,*)"inum"
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(inum(i,j),i=1,48)
+      !enddo
+      !write(6,*)"almsk"
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(nint(almsk(i,j)/real(inum(i,j))),i=1,48)
+      !enddo
+      !write(6,*)"zss"
+      !do j=96,49,-1
+      ! write(6,'(48i2)')(nint(zss(i,j)/10/real(inum(i,j))),i=1,48)
+      !enddo
 
       ! PATCH !!!!
       Do i=1,il
@@ -1103,18 +1103,18 @@
         end do
       end if
 
-      Write(6,*) 'final rmsk'
-      Do j=96,49,-1
-        Write(6,'(48i2)')(nint(rmsk(i,j)),i=1,48)
-      End Do
-      Write(6,*) 'final zs/10'
-      Do j=96,49,-1
-        Write(6,'(48i2)')(nint(zss(i,j)/10.),i=1,48)
-      End Do
-      Write(6,*) 'final sd/10'
-      Do j=96,49,-1
-        Write(6,'(48i2)')(nint(tsd(i,j)/10.),i=1,48)
-      End Do
+      !Write(6,*) 'final rmsk'
+      !Do j=96,49,-1
+      !  Write(6,'(48i2)')(nint(rmsk(i,j)),i=1,48)
+      !End Do
+      !Write(6,*) 'final zs/10'
+      !Do j=96,49,-1
+      !  Write(6,'(48i2)')(nint(zss(i,j)/10.),i=1,48)
+      !End Do
+      !Write(6,*) 'final sd/10'
+      !Do j=96,49,-1
+      !  Write(6,'(48i2)')(nint(tsd(i,j)/10.),i=1,48)
+      !End Do
 
       if (.not.netout) then
         write(luout,'(i3,i5,2f10.3,f6.3,f8.0,''  orog-mask-var'')') il,jl,rlong0,rlat0,schmidt,ds
