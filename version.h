@@ -1,2 +1,2 @@
 character(len=*), parameter :: version = &
-'TERREAD Date:   Fri Jan 12 13:02:55 2024 +1100 commit 18567452d12a20c4ed5652f6179dabcb7c488393'
+'TERREAD Date:   Thu May 23 18:08:28 2024 +1000 commit 588b9e0af4f114b1776b1b157007fecf0d4fed43'
