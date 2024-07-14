@@ -1,6 +1,6 @@
 ! Conformal Cubic Atmospheric Model
     
-! Copyright 2015-2022 Commonwealth Scientific Industrial Research Organisation (CSIRO)
+! Copyright 2015-2024 Commonwealth Scientific Industrial Research Organisation (CSIRO)
     
 ! This file is part of the Conformal Cubic Atmospheric Model (CCAM)
 !
@@ -66,6 +66,8 @@
       integer, dimension(2) :: iq_n, iq_s, iq_e, iq_w
       integer, dimension(2) :: ccdim,pxy
       integer, dimension(:), allocatable :: in,ie,is,iw
+      integer*2, dimension(3601,3) :: idata1_read
+      integer*2, dimension(1201,3) :: idata_read
       integer*2, dimension(3601) :: idata1
       integer*2, dimension(1201) :: idata
       integer, dimension(1201) :: i4data
@@ -88,8 +90,11 @@
       real cutsrtm,cut10km,cut1km
       real rlong0,rlat0,schmidt,dst
       real zs,aglon,aglat,alci,alcj,atsd
+      real slope_l, sx_e, sx_w, sy_n, sy_s, dx, dy
       real, dimension(2) :: lonlat
       real, dimension(:,:,:), allocatable :: rlld
+      real, dimension(3601) :: slope1_a
+      real, dimension(1201) :: slope_a
       
       data debug/.true./
       data do1km/.true./
@@ -125,11 +130,6 @@
       write(6,*) "CCAM: Starting terread"
       write(6,*) "=============================================================================="
       write(6,*) version
-      
-!#ifndef stacklimit
-!      ! For linux only - removes stacklimit on all processors
-!      call setstacklimit(-1)
-!#endif      
       
       write(6,*) "Reading topnml namelist"
 #ifdef unitnml
@@ -182,12 +182,6 @@
       call rworkalloc(il)
 
       if ( do250 ) then
-        !open ( unit=88, file=trim(filepath250m)//'/'//'fort.88', status='old' )
-        !do n = 1,37
-        !  read(88,*) ausfile(n)
-        !  write(6,*) ausfile(n)
-        !end do ! n = 1,37
-        !close (88)
         ausfile(1) = "sd52.ter"
         ausfile(2) = "sd53.ter"
         ausfile(3) = "sd54.ter"
@@ -246,10 +240,6 @@
       gridn=+999.
       rlatn=+999.
       rlonn=+999.
-      !imax=-999
-      !jmax=-999
-      !imin=+999
-      !jmin=+999
       do j=1,jl
        do i=1,il
          if(rlond(i,j).gt.180.)rlond(i,j)=rlond(i,j)-360.
@@ -260,36 +250,13 @@
            rlonx=max(rlonx,rlond(i,j))
            rlatn=min(rlatn,rlatd(i,j))
            rlonn=min(rlonn,rlond(i,j))
-           !jmax=max(jmax,j)
-           !imax=max(imax,i)
-           !jmin=min(jmin,j)
-           !imin=min(imin,i)
-           !write(6,*)i,j,n,grid(i,j),rlond(i,j),rlatd(i,j)
          endif ! grid < 20 km
- !        if ( j.eq.49 )write(6,*)i,j,rlond(i,j),rlatd(i,j),grid(i,j)
- !        if ( (il+1.lt.j .and. j.lt.2*il) .and. i.eq.25 ) write(6,*)i,j,rlond(i,j),rlatd(i,j),grid(i,j)
          if(rlond(i,j).gt.180.)rlond(i,j)=rlond(i,j)-360.	 
        enddo
       enddo
       write(6,*)"grid x,n=",gridx,gridn
       write(6,*)"rlon x,n=",rlonx,rlonn
       write(6,*)"rlat x,n=",rlatx,rlatn
-      !write(6,*)"i    x,n=",imax,imin
-      !write(6,*)"j    x,n=",jmax,jmin
-
-      !write(97,'(30f6.1)') grid
-      !write(98,'(30f6.2)') rlond
-      !write(99,'(30f6.2)') rlatd
-
-      !write(6,*)"grid spc(km)"
-      !do j=1,jl
-      !  do i=1,il
-      !    inumx(i,j)= nint(grid(i,j))
-      !  enddo !i=1,il
-      !enddo !j=1,jl
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
-      !enddo
 
 !     nested model topography (output)
       if (.not.netout) then
@@ -304,7 +271,6 @@
       call nc2out(grid ,il,jl,1,1.,idnc,"grid","grid","km",0.,5000.)
       call nc2out(rlond,il,jl,1,1.,idnc,"lon","lon","degrees",0.,360.)
       call nc2out(rlatd,il,jl,1,1.,idnc,"lat","lat","degrees",-90.,90.)
-      !call ncsnc(idnc,ier)
 
 ! initialize min,max, and sd arrays
       do j=1,jl
@@ -321,10 +287,12 @@
         id250lsm(i,j)=0
         id1km(i,j)=0
         id10km(i,j)=0
+        slope(i,j)=0.
+        slope_std(i,j)=0.
        enddo
       enddo
       
-      if ( dosrtm1 ) then
+      if ( dosrtm1 ) then ! *.bil version
           
         write(6,*) "Process dosrtm1"
         
@@ -368,9 +336,66 @@
               if ( okx .and. oky ) then
                 write(6,*) "Reading ",trim(fname)
                 write(6,*) "cutsrtm=",cutsrtm
+                idata1_read = 0 ! buffer
                 do kk = 1,3600 ! ignore extra overlap row
-                  read(13,rec=kk) idata1
+                  idata1_read(:,1) = idata1_read(:,2)  
+                  idata1_read(:,2) = idata1_read(:,3)
+                  idata1_read(:,3) = 0
+                  if ( kk==1 ) then
+                    read(13,rec=1) idata1_read(:,2)
+                  end if  
+                  if ( kk<3600 ) then
+                    read(13,rec=kk+1) idata1_read(:,3)
+                  end if  
+                  idata1 = idata1_read(:,2)
                   aglat=late-real(kk-1)/3600.
+                  ! calculate slope
+                  dx = cos(aglat*3.1415927/180.)*112000./3600.
+                  dy = 112000./3600.
+                  if ( kk==1 ) then
+                    sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
+                    sy_n = abs( real(idata1_read(1,3)) - real(idata1_read(1,2)) )
+                    slope1_a(1) = 0.5*(sx_e/dx+sy_n/dy)
+                    do ll = 2,3599
+                      sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
+                      sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
+                      sy_n = abs( real(idata1_read(ll,3)) - real(idata1_read(ll,2)) )
+                      slope1_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
+                    end do
+                    sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
+                    sy_n = abs( real(idata1_read(3600,3)) - real(idata1_read(3600,2)) )
+                    slope1_a(3600) = 0.5*(sx_w/dx+sy_n/dy)
+                  else if ( kk<3600 ) then    
+                    sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
+                    sy_n = abs( real(idata1_read(1,3)) - real(idata1_read(1,2)) )
+                    sy_s = abs( real(idata1_read(1,2)) - real(idata1_read(1,1)) )
+                    slope1_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
+                    do ll = 2,3599
+                      sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
+                      sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
+                      sy_n = abs( real(idata1_read(ll,3)) - real(idata1_read(ll,2)) )
+                      sy_s = abs( real(idata1_read(ll,2)) - real(idata1_read(ll,1)) )
+                      slope1_a(ll) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
+                    end do
+                    sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
+                    sy_n = abs( real(idata1_read(3600,3)) - real(idata1_read(3600,2)) )
+                    sy_s = abs( real(idata1_read(3600,2)) - real(idata1_read(3600,1)) )
+                    slope1_a(3600) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
+                  else
+                    sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
+                    sy_s = abs( real(idata1_read(1,2)) - real(idata1_read(1,1)) )
+                    slope1_a(1) = 0.5*(sx_e/dx+sy_s/dy)
+                    do ll = 2,3599
+                      sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
+                      sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
+                      sy_s = abs( real(idata1_read(ll,2)) - real(idata1_read(ll,1)) )
+                      slope1_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
+                    end do
+                    sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
+                    sy_s = abs( real(idata1_read(3600,2)) - real(idata1_read(3600,1)) )
+                    slope1_a(3600) = 0.5*(sx_w/dx+sy_s/dy)
+                  end if
+                  ! update cubic grid
                   do ll=1,3600
                     aglon=lons+real(ll-1)/3600.
                     call lltoijmod(aglon,aglat,alci,alcj,nface)
@@ -386,6 +411,7 @@
                       do lcj=lcjs,min(jl,lcjs+incg)
                     
                       zs=real(idata(ll))
+                      slope_l=slope1_a(ll)
                       
                       if (zs.gt.cutsrtm) then
                         almsk(lci,lcj) = almsk(lci,lcj) + 1.
@@ -397,7 +423,8 @@
                       tmax(lci,lcj)=max(tmax(lci,lcj),zs) ! find max/min topog. pnts in grid box
                       tmin(lci,lcj)=min(tmin(lci,lcj),zs)
                       tsd(lci,lcj)=tsd(lci,lcj)+zs**2 ! sum of squares for sd calc.
-                      
+                      slope(lci,lcj)=slope(lci,lcj)+slope_l ! acculate slope pnts
+                      slope_std(lci,lcj)=slope_std(lci,lcj)+slope_l**2 ! sum of squares for sd calc.
                       end do
                       end do
                       
@@ -412,7 +439,7 @@
           
       end if ! dosrtm1
       
-      if ( dosrtm ) then
+      if ( dosrtm ) then ! *.hgt version (depreciated?)
         write(6,*) "Process dosrtm"
       
         do ii=-180,179
@@ -462,14 +489,77 @@
               if (okx.and.oky) then
 	            write(6,*) "Reading ",trim(fname)
                 write(6,*) "cutsrtm=",cutsrtm
+                idata1_read = 0
                 do kk=1,1200 ! ignore extra overlap row
+                  idata1_read(:,1) = idata1_read(:,2)  
+                  idata1_read(:,2) = idata1_read(:,3)
+                  idata1_read(:,3) = 0
                   if ( ncfile ) then
-                    ierr = nf90_get_var(ncid,varid,i4data,start=(/1,kk/),count=(/1201,1/))  
-                    idata = i4data
+                    if ( kk==1 ) then  
+                      ierr = nf90_get_var(ncid,varid,i4data,start=(/1,kk/),count=(/1201,1/))  
+                      idata_read(:,2) = i4data
+                    end if
+                    if ( kk<1200 ) then
+                      ierr = nf90_get_var(ncid,varid,i4data,start=(/1,kk+1/),count=(/1201,1/))  
+                      idata_read(:,3) = i4data
+                    end if    
                   else    
-                    read(13,rec=kk) idata
+                    if ( kk==1 ) then  
+                      read(13,rec=kk) idata_read(:,2)
+                    end if
+                    if ( kk<1200 ) then  
+                      read(13,rec=kk+1) idata_read(:,3)
+                    end if    
                   end if  
+                  idata = idata_read(:,2)
                   aglat=late-real(kk-1)/1200.
+                  ! calculate slope
+                  dx = cos(aglat*3.1415927/180.)*112000./1200.
+                  dy = 112000./1200.
+                  if ( kk==1 ) then
+                    sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
+                    sy_n = abs( real(idata_read(1,3)) - real(idata_read(1,2)) )
+                    slope_a(1) = 0.5*(sx_e/dx+sy_n/dy)
+                    do ll = 2,1199
+                      sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
+                      sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
+                      sy_n = abs( real(idata_read(ll,3)) - real(idata_read(ll,2)) )
+                      slope_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
+                    end do
+                    sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
+                    sy_n = abs( real(idata_read(1200,3)) - real(idata_read(1200,2)) )
+                    slope_a(1200) = 0.5*(sx_w/dx+sy_n/dy)
+                  else if ( kk<1200 ) then    
+                    sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
+                    sy_n = abs( real(idata_read(1,3)) - real(idata_read(1,2)) )
+                    sy_s = abs( real(idata_read(1,2)) - real(idata_read(1,1)) )
+                    slope_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
+                    do ll = 2,1199
+                      sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
+                      sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
+                      sy_n = abs( real(idata_read(ll,3)) - real(idata_read(ll,2)) )
+                      sy_s = abs( real(idata_read(ll,2)) - real(idata_read(ll,1)) )
+                      slope_a(ll) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
+                    end do
+                    sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
+                    sy_n = abs( real(idata_read(1200,3)) - real(idata_read(1200,2)) )
+                    sy_s = abs( real(idata_read(1200,2)) - real(idata_read(1200,1)) )
+                    slope_a(1200) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
+                  else
+                    sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
+                    sy_s = abs( real(idata_read(1,2)) - real(idata_read(1,1)) )
+                    slope_a(1) = 0.5*(sx_e/dx+sy_s/dy)
+                    do ll = 2,1199
+                      sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
+                      sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
+                      sy_s = abs( real(idata_read(ll,2)) - real(idata_read(ll,1)) )
+                      slope_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
+                    end do
+                    sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
+                    sy_s = abs( real(idata_read(1200,2)) - real(idata_read(1200,1)) )
+                    slope_a(1200) = 0.5*(sx_w/dx+sy_s/dy)
+                  end if
+                  ! update cubic grid
                   do ll=1,1200
                     aglon=lons+real(ll-1)/1200.
                     call lltoijmod(aglon,aglat,alci,alcj,nface)
@@ -482,6 +572,7 @@
                       do lcj=lcjs,min(jl,lcjs+incg)
     
                       zs=real(idata(ll))
+                      slope_l=slope_a(ll)
                       if( zs.gt.cutsrtm ) then
                         almsk(lci,lcj) = almsk(lci,lcj) + 1.
                       end if  ! zs<-1000
@@ -491,6 +582,8 @@
                       tmax(lci,lcj)=max(tmax(lci,lcj),zs) ! find max/min topog. pnts in grid box
                       tmin(lci,lcj)=min(tmin(lci,lcj),zs)
                       tsd(lci,lcj)=tsd(lci,lcj)+zs**2 ! sum of squares for sd calc.
+                      slope(lci,lcj)=slope(lci,lcj)+slope_l ! acculate slope pnts
+                      slope_std(lci,lcj)=slope_std(lci,lcj)+slope_l**2 ! sum of squares for sd calc.
                       
                       end do
                       end do
@@ -510,7 +603,8 @@
       end if
       
 !================================
-      if ( do250 ) then
+      !if ( do250 ) then
+      if ( do250 .and. ( rlatx .gt. rlatn ) ) then     ! MJT suggestion
 !================================
       write(6,*)"Proccess Australian 250m files"
 
@@ -521,7 +615,6 @@
         ierr = nf90_open(trim(file)//'.nc',NF90_NOWRITE,ncid)
         if ( ierr==nf90_noerr ) then
           ncfile = .true.
-!         write(6,*) "Found netcdf version"
           ierr = nf90_inq_varid(ncid,"topo",varid)
           ierr = nf90_get_att(ncid,nf90_global,"nx",nx)
           ierr = nf90_get_att(ncid,nf90_global,"ny",ny)
@@ -540,6 +633,7 @@
         okx = okx .or. (lons.ge.rlonn .and. lons.le.rlonx)
         okx = okx .or. (lone.ge.rlonn .and. lone.le.rlonx)
         okx = okx .or. (lons.le.rlonn .and. lone.ge.rlonx)
+        !okx = okx .or. (lons.ge.rlonn .and. lone.le.rlonx) ! MJT suggestion
         oky = .false.
         oky = oky .or. (lats.ge.rlatn .and. lats.le.rlatx) ! start lat in area
         oky = oky .or. (late.ge.rlatn .and. late.le.rlatx) !  end  lat in area
@@ -555,40 +649,6 @@
 
       enddo ! n
 
-      !write(6,*)"inum"
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inum(i,j),i=1,48)
-      !enddo
-
-      !write(6,*)"almsk"
-      !do j=1,jl
-      !  do i=1,il
-      !    if ( inum(i,j) .gt. 0 ) then
-      !       inumx(i,j)=nint(real(almsk(i,j))/real(inum(i,j)))
-      !    else
-      !       inumx(i,j)=0
-      !    endif
-      !  enddo !i=1,il
-      !enddo !j=1,jl
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
-      !enddo
-
-      !write(6,*)"zss/10"
-      !do j=1,jl
-      !  do i=1,il
-      !    if ( inum(i,j) .gt. 0 ) then
-      !       inumx(i,j)=nint(zss(i,j)/(10.*real(inum(i,j))))
-      !    else
-      !       inumx(i,j)=0
-      !    endif
-      !  enddo !i=1,il
-      !enddo !j=1,jl
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
-      !enddo
-
-
       write(6,*)"Done with Australian 250m files"
 
 !================================
@@ -596,7 +656,8 @@
 !================================
 
 !================================
-      if ( do250lsm ) then
+      !if ( do250lsm ) then
+      if ( do250lsm .and. ( rlatx .gt. rlatn ) ) then ! MJT suggrestion
 !================================
       write(6,*)"Proccess modis 250m lsm files"
 
@@ -612,7 +673,6 @@
         if ( ierr==nf90_noerr ) then
 
         write(6,*) "modislam=",trim(file)
-!       write(6,*) "Found netcdf file"
 
         nx=4800
         ny=4800
@@ -638,12 +698,6 @@
         oky = oky .or. (late.ge.rlatn .and. late.le.rlatx) !  end  lat in area
         oky = oky .or. (lats.le.rlatn .and. late.ge.rlatx) ! grid encompasses hr reg
         oky = oky .or. (lats.ge.rlatn .and. late.le.rlatx) ! grid within hr reg
-!       okx=.true.
-!       oky=.true.
-
-!       write(6,'("rlonn,rlonx=",2f7.1," rlatn,rlatx=",2f7.1)') rlonn,rlonx,rlatn,rlatx
-!       write(6,'("lons,lone=",2f7.1," lats,late=",2f7.1)') lons,lone,lats,late
-!       write(6,'("okx,oky=",2l4," nx,ny=",2i6,a10)') okx,oky,nx,ny
 
         if ( okx.and.oky ) then
           write(6,*)"call read250lsm(nx,ny,lons,lats,dl,debug,idia,jdia,il,ncid,varid,ncfile,h,v)"
@@ -658,11 +712,6 @@
       enddo ! h
 ! end of loop over all modis panels
 
-      !write(6,*)"id250lsm"
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(id250lsm(i,j),i=1,48)
-      !enddo
-
       write(6,*)"almsk"
       num250lsm=0 ! count number of grid points that have modis l/s mask data
       do j=1,jl
@@ -675,10 +724,6 @@
           endif
         enddo !i=1,il
       enddo !j=1,jl
-
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
-      !enddo
 
       write(6,*)"Done with modis 250m files  num250lsm=",num250lsm
 
@@ -731,7 +776,6 @@
           clons=lons+dlh
           clats=lats-dlh
           call read1km(file,nx,ny,clons,clats,debug,idia,jdia,il,cut1km)
-          !call read1km(file,nx,ny,lons,lats,debug,idia,jdia)
 ! 9 sept 2004
         endif
 
@@ -756,6 +800,8 @@
         okx = okx .or. (lons.gt.rlonn .and. lons.lt.rlonx)
         okx = okx .or. (lone.gt.rlonn .and. lone.lt.rlonx)
         okx = okx .or. (lons.lt.rlonn .and. lone.gt.rlonx)
+        okx = okx .or. (lons.lt.-179. .and. rlonx.gt. 180.) ! fix for dateline data
+        okx = okx .or. (lons.gt. 179. .and. rlonn.lt.-180.) ! fix for dateline data        
         oky = .false.
         oky = oky .or. (lats.gt.rlatn .and. lats.lt.rlatx)
         oky = oky .or. (late.gt.rlatn .and. late.lt.rlatx)
@@ -770,55 +816,12 @@
           clons=lons+dlh
           clats=lats-dlh
           call read1km(file,nx,ny,clons,clats,debug,idia,jdia,il,cut1km)
-          !call read1km(file,nx,ny,lons,lats,debug,idia,jdia)
 ! 9 sept 2004
         endif
 
       enddo ! i
 
       write(6,*)"after do1km"
-
-      !write(6,*)"inum"
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inum(i,j),i=1,48)
-      !enddo
-
-!     write(6,*)"almsk"
-!     do j=96,49,-1
-!      write(6,'(48i2)')(nint(almsk(i,j)/real(inum(i,j))),i=1,48)
-!     enddo
-!     write(6,*)"zss"
-!     do j=96,49,-1
-!      write(6,'(48i2)')(nint(zss(i,j)/10/real(inum(i,j))),i=1,48)
-!     enddo
-
-      !write(6,*)"almsk"
-      !do j=1,jl
-      !  do i=1,il
-      !    if ( inum(i,j) .gt. 0 ) then
-      !       inumx(i,j)=nint(almsk(i,j)/real(inum(i,j)))
-      !    else
-      !       inumx(i,j)=0
-      !    endif
-      !  enddo !i=1,il
-      !enddo !j=1,jl
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
-      !enddo
-
-      !write(6,*)"zss/10"
-      !do j=1,jl
-      !  do i=1,il
-      !    if ( inum(i,j) .gt. 0 ) then
-      !       inumx(i,j)= nint(zss(i,j)/10/real(inum(i,j)))
-      !    else
-      !       inumx(i,j)=0
-      !    endif
-      !  enddo !i=1,il
-      !enddo !j=1,jl
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inumx(i,j),i=1,48)
-      !enddo
 
       write(6,*)"Done with DEM files"
 
@@ -830,28 +833,13 @@
 
       write(6,*)"Now calling read10km"
       call read10km(debug,do1km,il,cut10km,filepath10km)
+      write(6,*)"after read10km"
 
 !================================
-
-      write(6,*)"after read10km"
-      !write(6,*)"inum"
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(inum(i,j),i=1,48)
-      !enddo
-      !write(6,*)"almsk"
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(nint(almsk(i,j)/real(inum(i,j))),i=1,48)
-      !enddo
-      !write(6,*)"zss"
-      !do j=96,49,-1
-      ! write(6,'(48i2)')(nint(zss(i,j)/10/real(inum(i,j))),i=1,48)
-      !enddo
 
       ! PATCH !!!!
       Do i=1,il
         Do j=1,jl
-        !  If ((zss(i,j)*real(inum(i,j))).LT.0.) almsk(i,j)=0.
-
           aglon=rlond(i,j)
           aglat=rlatd(i,j)
           If ((aglon.GT.135.).AND.(aglon.LT.140.)) then
@@ -917,6 +905,8 @@
              tsd(i,j)= 0.
              tmin(i,j)= 0.
              tmax(i,j)= 0.
+             slope(i,j)=0.
+             slope_std(i,j)=0.
           else
 ! now case where inum ne 0
              zss(i,j) = zss(i,j)/real(inum(i,j))
@@ -924,6 +914,11 @@
              tsd(i,j)=sqrt(abs(tsd(i,j)/real(inum(i,j))-zss(i,j)**2)) ! abs for rounding?
 !            tsd(i,j)=sqrt(tsd(i,j)/real(inum(i,j))-zss(i,j)**2)
 
+! compute slope
+             slope(i,j) = slope(i,j)/real(inum(i,j))
+! compute sd
+             slope_std(i,j) = sqrt(abs(slope_std(i,j)/real(inum(i,j))-slope(i,j)**2))
+             
 !mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 ! if no modis land-sea data, do following
              if ( id250lsm(i,j) .eq. 0 ) then
@@ -939,6 +934,8 @@
                  tsd(i,j)=0. !mjt 12-5-05
                  tmax(i,j)=0. !mjt 12-5-05
                  tmin(i,j)=0. !mjt 12-5-05
+                 slope(i,j)=0.
+                 slope_std(i,j)=0.
                else ! almsk
 ! land point
                  rmsk(i,j) = 1.
@@ -954,7 +951,8 @@
       enddo ! j
 
 ! first fill 
-2     if(numzer.gt.0)then
+      numzer = 999
+      do while (numzer.gt.0)
 !       this checks for non-data points, and inserts a neighbouring value
         print *,'**** numzer= ',numzer
         numzer=0
@@ -992,6 +990,8 @@
               tmax(i,j)=tmax(iq2(1),iq2(2))
               almsk(i,j)=almsk(iq2(1),iq2(2))
               inumx(i,j)=1
+              slope(i,j)=slope(iq2(1),iq2(2))
+              slope_std(i,j)=slope_std(iq2(1),iq2(2))
             else
               numzer=numzer+1
             endif    !  (iq2.ne.0)
@@ -1003,8 +1003,7 @@
           inum(i,j)=inumx(i,j)
          enddo ! i
         enddo ! j
-      endif         ! (numzer.gt.0)
-      if(numzer.gt.0)go to 2
+      end do ! do while
 ! first fill 
 
 ! second fill to fix tsd
@@ -1021,7 +1020,7 @@
          enddo ! i
         enddo ! j
 
-3     if(numzer.gt.0)then
+      do while (numzer.gt.0)
 !       this checks for non-data points, and inserts a neighbouring value
         print *,'**** numzer= ',numzer
         numzer=0
@@ -1078,8 +1077,7 @@
           inumx(i,j)=nint(almsk(i,j))
          enddo ! i
         enddo ! j
-      endif         ! (numzer.gt.0)
-      if(numzer.gt.0)go to 3
+      end do ! do while
 !fix tsd
       
       if (topfilt) then
@@ -1103,19 +1101,6 @@
         end do
       end if
 
-      !Write(6,*) 'final rmsk'
-      !Do j=96,49,-1
-      !  Write(6,'(48i2)')(nint(rmsk(i,j)),i=1,48)
-      !End Do
-      !Write(6,*) 'final zs/10'
-      !Do j=96,49,-1
-      !  Write(6,'(48i2)')(nint(zss(i,j)/10.),i=1,48)
-      !End Do
-      !Write(6,*) 'final sd/10'
-      !Do j=96,49,-1
-      !  Write(6,'(48i2)')(nint(tsd(i,j)/10.),i=1,48)
-      !End Do
-
       if (.not.netout) then
         write(luout,'(i3,i5,2f10.3,f6.3,f8.0,''  orog-mask-var'')') il,jl,rlong0,rlat0,schmidt,ds
       end if
@@ -1126,6 +1111,9 @@
       call nc2out(tmax ,il,jl,1,1.,idnc,"zmax","zmax","m",-100.,30000.)
       call nc2out(tmin ,il,jl,1,1.,idnc,"zmin","zmin","m",-100.,30000.)
 
+      call nc2out(slope    ,il,jl,1,1.,idnc,"slope","slope","none",0.,10.)
+      call nc2out(slope_std,il,jl,1,1.,idnc,"slope_std","slope_std","none",0.,10.)
+      
 !     write out g*zs(il,jl) to formatted file
       do j=1,jl
         do i=1,il
