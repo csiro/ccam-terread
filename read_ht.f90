@@ -19,7 +19,7 @@
 
 !------------------------------------------------------------------------------
       
-subroutine read_ht( lat, ht, slope, ht_read, filepath10km )
+subroutine read_ht( lat, ht, ht_read, filepath10km )
 
 use netcdf_m
       
@@ -33,7 +33,7 @@ integer, parameter :: nlong=4320 ! number of longitudes
 
 ! arguments
 integer, dimension(nlong), intent(out) :: ht ! topographic height in metres (output)
-real, dimension(nlong), intent(out) :: slope
+!real, dimension(nlong), intent(out) :: slope
 real, dimension(nlong,3), intent(inout) :: ht_read
 real, intent(in) :: lat ! latitude (input)
 character(len=*), intent(in) :: filepath10km
@@ -46,7 +46,7 @@ integer(kind=8) ival ! int. value
 integer      j ! subscript
 integer ierr
 integer, save :: ncid, varid
-real sx_e, sx_w, sy_n, sy_s, dx, dy
+!real sx_e, sx_w, sy_n, sy_s, dx, dy
 logical, save :: new=.true. ! true 1st call
 logical, save :: ncfile=.false. ! is input a netcdf file?
 
@@ -127,45 +127,45 @@ end if
 ! return terrain height
 ht(1:nlong) = ht_read(1:nlong,2)
 
-! calculate slope
-! as terread uses tiles, we estimate slope from the surrounding gradients
-! which can be ommitted when near a boundary
-if ( i==1 ) then ! north pole
-  dx = 0.
-  dy = 112000.*180./2160.  
-  do j = 1,nlong
-    !sx will always be zero at the pole
-    sy_n = abs(ht_read(j,3) - ht_read(j,2))
-    slope(j) = sy_n/dy
-  end do  
-else if ( i==2161 ) then ! south pole
-  dx = 0.  
-  dy = 112000.*180./2160.  
-  do j = 1,nlong
-    !sx will always be zero at the pole  
-    sy_s = abs(ht_read(j,2) - ht_read(j,1))
-    slope(j) = sy_s/dy
-  end do    
-else
-  dx = cos(lat*3.1415927/180.)*112000.*360./real(nlong)
-  dy = 112000.*180./2160.  
-  sx_e = abs(ht_read(2,2) - ht_read(1,2))
-  sx_w = abs(ht_read(1,2) - ht_read(nlong,2))
-  sy_n = abs(ht_read(1,3) - ht_read(1,2))
-  sy_s = abs(ht_read(1,2) - ht_read(1,1))
-  slope(1) = 0.25*(sx_e/dx + sx_w/dx + sy_n/dy + sy_s/dy)
-  do j = 2,nlong-1
-    sx_e = abs(ht_read(j+1,2) - ht_read(j,2))
-    sx_w = abs(ht_read(j,2) - ht_read(j-1,2))
-    sy_n = abs(ht_read(j,3) - ht_read(j,2))
-    sy_s = abs(ht_read(j,2) - ht_read(j,1))
-    slope(j) = 0.25*(sx_e/dx + sx_w/dx + sy_n/dy + sy_s/dy)
-  end do  
-  sx_e = abs(ht_read(1,2) - ht_read(nlong,2))
-  sx_w = abs(ht_read(nlong,2) - ht_read(nlong-1,2))
-  sy_n = abs(ht_read(nlong,3) - ht_read(nlong,2))
-  sy_s = abs(ht_read(nlong,2) - ht_read(nlong,1))
-  slope(nlong) = 0.25*(sx_e/dx + sx_w/dx + sy_n/dy + sy_s/dy)
-end if
+!! calculate slope
+!! as terread uses tiles, we estimate slope from the surrounding gradients
+!! which can be ommitted when near a boundary
+!if ( i==1 ) then ! north pole
+!  dx = 0.
+!  dy = 112000.*180./2160.  
+!  do j = 1,nlong
+!    !sx will always be zero at the pole
+!    sy_n = abs(ht_read(j,3) - ht_read(j,2))
+!    slope(j) = sy_n/dy
+!  end do  
+!else if ( i==2161 ) then ! south pole
+!  dx = 0.  
+!  dy = 112000.*180./2160.  
+!  do j = 1,nlong
+!    !sx will always be zero at the pole  
+!    sy_s = abs(ht_read(j,2) - ht_read(j,1))
+!    slope(j) = sy_s/dy
+!  end do    
+!else
+!  dx = cos(lat*3.1415927/180.)*112000.*360./real(nlong)
+!  dy = 112000.*180./2160.  
+!  sx_e = abs(ht_read(2,2) - ht_read(1,2))
+!  sx_w = abs(ht_read(1,2) - ht_read(nlong,2))
+!  sy_n = abs(ht_read(1,3) - ht_read(1,2))
+!  sy_s = abs(ht_read(1,2) - ht_read(1,1))
+!  slope(1) = 0.25*(sx_e/dx + sx_w/dx + sy_n/dy + sy_s/dy)
+!  do j = 2,nlong-1
+!    sx_e = abs(ht_read(j+1,2) - ht_read(j,2))
+!    sx_w = abs(ht_read(j,2) - ht_read(j-1,2))
+!    sy_n = abs(ht_read(j,3) - ht_read(j,2))
+!    sy_s = abs(ht_read(j,2) - ht_read(j,1))
+!    slope(j) = 0.25*(sx_e/dx + sx_w/dx + sy_n/dy + sy_s/dy)
+!  end do  
+!  sx_e = abs(ht_read(1,2) - ht_read(nlong,2))
+!  sx_w = abs(ht_read(nlong,2) - ht_read(nlong-1,2))
+!  sy_n = abs(ht_read(nlong,3) - ht_read(nlong,2))
+!  sy_s = abs(ht_read(nlong,2) - ht_read(nlong,1))
+!  slope(nlong) = 0.25*(sx_e/dx + sx_w/dx + sy_n/dy + sy_s/dy)
+!end if
 
 end subroutine read_ht

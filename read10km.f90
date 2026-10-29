@@ -35,8 +35,9 @@ integer izsmaxj, izsminj, j, i, lci, lcj, nface
 integer, dimension(nx) :: izs
 real dl
 real lons,lats
-real slope_l, aglat, aglon, alci, alcj, amask, zs
-real, dimension(nx) :: slope_a
+real aglat, aglon, alci, alcj, amask, zs
+!real slope_l
+!real, dimension(nx) :: slope_a
 real, intent(in) :: cut10km
 real, dimension(nx,3) :: ht_buffer
 character(len=*), intent(in) :: filepath10km
@@ -53,7 +54,7 @@ do j=1,ny
 !#######################################################################
   aglat = lats + (j-1)*dl  ! 0.+...
 
-  call read_ht ( aglat, izs, slope_a, ht_buffer, filepath10km )
+  call read_ht ( aglat, izs, ht_buffer, filepath10km )
 
   izsmaxj=-99999
   izsminj=+99999
@@ -85,12 +86,12 @@ do j=1,ny
 ! ocean point
             amask = 0.
             zs=0.
-            slope_l = 0.
+            !slope_l = 0.
           else  ! zs>=-1000
 ! land point
             amask = 1.
             zs=real(izs(i))
-            slope_l = slope_a(i)
+            !slope_l = slope_a(i)
           end if  ! zs<-1000
 
           id10km(lci,lcj) = id10km(lci,lcj) + 1  
@@ -105,10 +106,10 @@ do j=1,ny
           tmin(lci,lcj)=min(tmin(lci,lcj),zs)
 ! sum of squares for sd calc.
           tsd(lci,lcj)=tsd(lci,lcj)+zs**2
-! accumulate slope pnts
-          slope(lci,lcj) = slope(lci,lcj) + slope_l
-! sume of ssquares for sd calc
-          slope_std(lci,lcj) = slope_std(lci,lcj) + slope_l**2
+!! accumulate slope pnts
+!          slope(lci,lcj) = slope(lci,lcj) + slope_l
+!! sume of ssquares for sd calc
+!          slope_std(lci,lcj) = slope_std(lci,lcj) + slope_l**2
              
         end if ! idsrtm
 

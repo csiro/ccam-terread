@@ -90,11 +90,11 @@
       real cutsrtm,cut10km,cut1km
       real rlong0,rlat0,schmidt,dst
       real zs,aglon,aglat,alci,alcj,atsd
-      real slope_l, sx_e, sx_w, sy_n, sy_s, dx, dy
+      !real slope_l, sx_e, sx_w, sy_n, sy_s, dx, dy
       real, dimension(2) :: lonlat
       real, dimension(:,:,:), allocatable :: rlld
-      real, dimension(3601) :: slope1_a
-      real, dimension(1201) :: slope_a
+      !real, dimension(3601) :: slope1_a
+      !real, dimension(1201) :: slope_a
       
       data debug/.true./
       data do1km/.true./
@@ -287,8 +287,8 @@
         id250lsm(i,j)=0
         id1km(i,j)=0
         id10km(i,j)=0
-        slope(i,j)=0.
-        slope_std(i,j)=0.
+        !slope(i,j)=0.
+        !slope_std(i,j)=0.
        enddo
       enddo
       
@@ -349,52 +349,52 @@
                   end if  
                   idata1 = idata1_read(:,2)
                   aglat=late-real(kk-1)/3600.
-                  ! calculate slope
-                  dx = cos(aglat*3.1415927/180.)*112000./3600.
-                  dy = 112000./3600.
-                  if ( kk==1 ) then
-                    sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
-                    sy_n = abs( real(idata1_read(1,3)) - real(idata1_read(1,2)) )
-                    slope1_a(1) = 0.5*(sx_e/dx+sy_n/dy)
-                    do ll = 2,3599
-                      sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
-                      sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
-                      sy_n = abs( real(idata1_read(ll,3)) - real(idata1_read(ll,2)) )
-                      slope1_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
-                    end do
-                    sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
-                    sy_n = abs( real(idata1_read(3600,3)) - real(idata1_read(3600,2)) )
-                    slope1_a(3600) = 0.5*(sx_w/dx+sy_n/dy)
-                  else if ( kk<3600 ) then    
-                    sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
-                    sy_n = abs( real(idata1_read(1,3)) - real(idata1_read(1,2)) )
-                    sy_s = abs( real(idata1_read(1,2)) - real(idata1_read(1,1)) )
-                    slope1_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
-                    do ll = 2,3599
-                      sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
-                      sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
-                      sy_n = abs( real(idata1_read(ll,3)) - real(idata1_read(ll,2)) )
-                      sy_s = abs( real(idata1_read(ll,2)) - real(idata1_read(ll,1)) )
-                      slope1_a(ll) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
-                    end do
-                    sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
-                    sy_n = abs( real(idata1_read(3600,3)) - real(idata1_read(3600,2)) )
-                    sy_s = abs( real(idata1_read(3600,2)) - real(idata1_read(3600,1)) )
-                    slope1_a(3600) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
-                  else
-                    sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
-                    sy_s = abs( real(idata1_read(1,2)) - real(idata1_read(1,1)) )
-                    slope1_a(1) = 0.5*(sx_e/dx+sy_s/dy)
-                    do ll = 2,3599
-                      sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
-                      sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
-                      sy_s = abs( real(idata1_read(ll,2)) - real(idata1_read(ll,1)) )
-                      slope1_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
-                    end do
-                    sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
-                    sy_s = abs( real(idata1_read(3600,2)) - real(idata1_read(3600,1)) )
-                    slope1_a(3600) = 0.5*(sx_w/dx+sy_s/dy)
-                  end if
+                  !! calculate slope
+                  !dx = cos(aglat*3.1415927/180.)*112000./3600.
+                  !dy = 112000./3600.
+                  !if ( kk==1 ) then
+                  !  sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
+                  !  sy_n = abs( real(idata1_read(1,3)) - real(idata1_read(1,2)) )
+                  !  slope1_a(1) = 0.5*(sx_e/dx+sy_n/dy)
+                  !  do ll = 2,3599
+                  !    sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
+                  !    sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
+                  !    sy_n = abs( real(idata1_read(ll,3)) - real(idata1_read(ll,2)) )
+                  !    slope1_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
+                  !  end do
+                  !  sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
+                  !  sy_n = abs( real(idata1_read(3600,3)) - real(idata1_read(3600,2)) )
+                  !  slope1_a(3600) = 0.5*(sx_w/dx+sy_n/dy)
+                  !else if ( kk<3600 ) then    
+                  !  sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
+                  !  sy_n = abs( real(idata1_read(1,3)) - real(idata1_read(1,2)) )
+                  !  sy_s = abs( real(idata1_read(1,2)) - real(idata1_read(1,1)) )
+                  !  slope1_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
+                  !  do ll = 2,3599
+                  !    sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
+                  !    sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
+                  !    sy_n = abs( real(idata1_read(ll,3)) - real(idata1_read(ll,2)) )
+                  !    sy_s = abs( real(idata1_read(ll,2)) - real(idata1_read(ll,1)) )
+                  !    slope1_a(ll) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
+                  !  end do
+                  !  sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
+                  !  sy_n = abs( real(idata1_read(3600,3)) - real(idata1_read(3600,2)) )
+                  !  sy_s = abs( real(idata1_read(3600,2)) - real(idata1_read(3600,1)) )
+                  !  slope1_a(3600) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
+                  !else
+                  !  sx_e = abs( real(idata1_read(2,2)) - real(idata1_read(1,2)) )  
+                  !  sy_s = abs( real(idata1_read(1,2)) - real(idata1_read(1,1)) )
+                  !  slope1_a(1) = 0.5*(sx_e/dx+sy_s/dy)
+                  !  do ll = 2,3599
+                  !    sx_e = abs( real(idata1_read(ll+1,2)) - real(idata1_read(ll,2)) )  
+                  !    sx_w = abs( real(idata1_read(ll,2)) - real(idata1_read(ll-1,2)) )
+                  !    sy_s = abs( real(idata1_read(ll,2)) - real(idata1_read(ll,1)) )
+                  !    slope1_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
+                  !  end do
+                  !  sx_w = abs( real(idata1_read(3600,2)) - real(idata1_read(3599,2)) )
+                  !  sy_s = abs( real(idata1_read(3600,2)) - real(idata1_read(3600,1)) )
+                  !  slope1_a(3600) = 0.5*(sx_w/dx+sy_s/dy)
+                  !end if
                   ! update cubic grid
                   do ll=1,3600
                     aglon=lons+real(ll-1)/3600.
@@ -411,7 +411,7 @@
                       do lcj=lcjs,min(jl,lcjs+incg)
                     
                       zs=real(idata(ll))
-                      slope_l=slope1_a(ll)
+                      !slope_l=slope1_a(ll)
                       
                       if (zs.gt.cutsrtm) then
                         almsk(lci,lcj) = almsk(lci,lcj) + 1.
@@ -423,8 +423,8 @@
                       tmax(lci,lcj)=max(tmax(lci,lcj),zs) ! find max/min topog. pnts in grid box
                       tmin(lci,lcj)=min(tmin(lci,lcj),zs)
                       tsd(lci,lcj)=tsd(lci,lcj)+zs**2 ! sum of squares for sd calc.
-                      slope(lci,lcj)=slope(lci,lcj)+slope_l ! acculate slope pnts
-                      slope_std(lci,lcj)=slope_std(lci,lcj)+slope_l**2 ! sum of squares for sd calc.
+                      !slope(lci,lcj)=slope(lci,lcj)+slope_l ! acculate slope pnts
+                      !slope_std(lci,lcj)=slope_std(lci,lcj)+slope_l**2 ! sum of squares for sd calc.
                       end do
                       end do
                       
@@ -513,52 +513,52 @@
                   end if  
                   idata = idata_read(:,2)
                   aglat=late-real(kk-1)/1200.
-                  ! calculate slope
-                  dx = cos(aglat*3.1415927/180.)*112000./1200.
-                  dy = 112000./1200.
-                  if ( kk==1 ) then
-                    sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
-                    sy_n = abs( real(idata_read(1,3)) - real(idata_read(1,2)) )
-                    slope_a(1) = 0.5*(sx_e/dx+sy_n/dy)
-                    do ll = 2,1199
-                      sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
-                      sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
-                      sy_n = abs( real(idata_read(ll,3)) - real(idata_read(ll,2)) )
-                      slope_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
-                    end do
-                    sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
-                    sy_n = abs( real(idata_read(1200,3)) - real(idata_read(1200,2)) )
-                    slope_a(1200) = 0.5*(sx_w/dx+sy_n/dy)
-                  else if ( kk<1200 ) then    
-                    sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
-                    sy_n = abs( real(idata_read(1,3)) - real(idata_read(1,2)) )
-                    sy_s = abs( real(idata_read(1,2)) - real(idata_read(1,1)) )
-                    slope_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
-                    do ll = 2,1199
-                      sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
-                      sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
-                      sy_n = abs( real(idata_read(ll,3)) - real(idata_read(ll,2)) )
-                      sy_s = abs( real(idata_read(ll,2)) - real(idata_read(ll,1)) )
-                      slope_a(ll) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
-                    end do
-                    sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
-                    sy_n = abs( real(idata_read(1200,3)) - real(idata_read(1200,2)) )
-                    sy_s = abs( real(idata_read(1200,2)) - real(idata_read(1200,1)) )
-                    slope_a(1200) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
-                  else
-                    sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
-                    sy_s = abs( real(idata_read(1,2)) - real(idata_read(1,1)) )
-                    slope_a(1) = 0.5*(sx_e/dx+sy_s/dy)
-                    do ll = 2,1199
-                      sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
-                      sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
-                      sy_s = abs( real(idata_read(ll,2)) - real(idata_read(ll,1)) )
-                      slope_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
-                    end do
-                    sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
-                    sy_s = abs( real(idata_read(1200,2)) - real(idata_read(1200,1)) )
-                    slope_a(1200) = 0.5*(sx_w/dx+sy_s/dy)
-                  end if
+                  !! calculate slope
+                  !dx = cos(aglat*3.1415927/180.)*112000./1200.
+                  !dy = 112000./1200.
+                  !if ( kk==1 ) then
+                  !  sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
+                  !  sy_n = abs( real(idata_read(1,3)) - real(idata_read(1,2)) )
+                  !  slope_a(1) = 0.5*(sx_e/dx+sy_n/dy)
+                  !  do ll = 2,1199
+                  !    sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
+                  !    sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
+                  !    sy_n = abs( real(idata_read(ll,3)) - real(idata_read(ll,2)) )
+                  !    slope_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
+                  !  end do
+                  !  sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
+                  !  sy_n = abs( real(idata_read(1200,3)) - real(idata_read(1200,2)) )
+                  !  slope_a(1200) = 0.5*(sx_w/dx+sy_n/dy)
+                  !else if ( kk<1200 ) then    
+                  !  sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
+                  !  sy_n = abs( real(idata_read(1,3)) - real(idata_read(1,2)) )
+                  !  sy_s = abs( real(idata_read(1,2)) - real(idata_read(1,1)) )
+                  !  slope_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
+                  !  do ll = 2,1199
+                  !    sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
+                  !    sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
+                  !    sy_n = abs( real(idata_read(ll,3)) - real(idata_read(ll,2)) )
+                  !    sy_s = abs( real(idata_read(ll,2)) - real(idata_read(ll,1)) )
+                  !    slope_a(ll) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
+                  !  end do
+                  !  sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
+                  !  sy_n = abs( real(idata_read(1200,3)) - real(idata_read(1200,2)) )
+                  !  sy_s = abs( real(idata_read(1200,2)) - real(idata_read(1200,1)) )
+                  !  slope_a(1200) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
+                  !else
+                  !  sx_e = abs( real(idata_read(2,2)) - real(idata_read(1,2)) )  
+                  !  sy_s = abs( real(idata_read(1,2)) - real(idata_read(1,1)) )
+                  !  slope_a(1) = 0.5*(sx_e/dx+sy_s/dy)
+                  !  do ll = 2,1199
+                  !    sx_e = abs( real(idata_read(ll+1,2)) - real(idata_read(ll,2)) )  
+                  !    sx_w = abs( real(idata_read(ll,2)) - real(idata_read(ll-1,2)) )
+                  !    sy_s = abs( real(idata_read(ll,2)) - real(idata_read(ll,1)) )
+                  !    slope_a(ll) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
+                  !  end do
+                  !  sx_w = abs( real(idata_read(1200,2)) - real(idata_read(1199,2)) )
+                  !  sy_s = abs( real(idata_read(1200,2)) - real(idata_read(1200,1)) )
+                  !  slope_a(1200) = 0.5*(sx_w/dx+sy_s/dy)
+                  !end if
                   ! update cubic grid
                   do ll=1,1200
                     aglon=lons+real(ll-1)/1200.
@@ -572,7 +572,7 @@
                       do lcj=lcjs,min(jl,lcjs+incg)
     
                       zs=real(idata(ll))
-                      slope_l=slope_a(ll)
+                      !slope_l=slope_a(ll)
                       if( zs.gt.cutsrtm ) then
                         almsk(lci,lcj) = almsk(lci,lcj) + 1.
                       end if  ! zs<-1000
@@ -582,8 +582,8 @@
                       tmax(lci,lcj)=max(tmax(lci,lcj),zs) ! find max/min topog. pnts in grid box
                       tmin(lci,lcj)=min(tmin(lci,lcj),zs)
                       tsd(lci,lcj)=tsd(lci,lcj)+zs**2 ! sum of squares for sd calc.
-                      slope(lci,lcj)=slope(lci,lcj)+slope_l ! acculate slope pnts
-                      slope_std(lci,lcj)=slope_std(lci,lcj)+slope_l**2 ! sum of squares for sd calc.
+                      !slope(lci,lcj)=slope(lci,lcj)+slope_l ! acculate slope pnts
+                      !slope_std(lci,lcj)=slope_std(lci,lcj)+slope_l**2 ! sum of squares for sd calc.
                       
                       end do
                       end do
@@ -830,7 +830,7 @@
 !================================
 
 !***********************************************************************
-
+      
       write(6,*)"Now calling read10km"
       call read10km(debug,do1km,il,cut10km,filepath10km)
       write(6,*)"after read10km"
@@ -905,8 +905,8 @@
              tsd(i,j)= 0.
              tmin(i,j)= 0.
              tmax(i,j)= 0.
-             slope(i,j)=0.
-             slope_std(i,j)=0.
+             !slope(i,j)=0.
+             !slope_std(i,j)=0.
           else
 ! now case where inum ne 0
              zss(i,j) = zss(i,j)/real(inum(i,j))
@@ -914,10 +914,10 @@
              tsd(i,j)=sqrt(abs(tsd(i,j)/real(inum(i,j))-zss(i,j)**2)) ! abs for rounding?
 !            tsd(i,j)=sqrt(tsd(i,j)/real(inum(i,j))-zss(i,j)**2)
 
-! compute slope
-             slope(i,j) = slope(i,j)/real(inum(i,j))
-! compute sd
-             slope_std(i,j) = sqrt(abs(slope_std(i,j)/real(inum(i,j))-slope(i,j)**2))
+!! compute slope
+!             slope(i,j) = slope(i,j)/real(inum(i,j))
+!! compute sd
+!             slope_std(i,j) = sqrt(abs(slope_std(i,j)/real(inum(i,j))-slope(i,j)**2))
              
 !mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 ! if no modis land-sea data, do following
@@ -934,8 +934,8 @@
                  tsd(i,j)=0. !mjt 12-5-05
                  tmax(i,j)=0. !mjt 12-5-05
                  tmin(i,j)=0. !mjt 12-5-05
-                 slope(i,j)=0.
-                 slope_std(i,j)=0.
+                 !slope(i,j)=0.
+                 !slope_std(i,j)=0.
                else ! almsk
 ! land point
                  rmsk(i,j) = 1.
@@ -990,8 +990,8 @@
               tmax(i,j)=tmax(iq2(1),iq2(2))
               almsk(i,j)=almsk(iq2(1),iq2(2))
               inumx(i,j)=1
-              slope(i,j)=slope(iq2(1),iq2(2))
-              slope_std(i,j)=slope_std(iq2(1),iq2(2))
+              !slope(i,j)=slope(iq2(1),iq2(2))
+              !slope_std(i,j)=slope_std(iq2(1),iq2(2))
             else
               numzer=numzer+1
             endif    !  (iq2.ne.0)
@@ -1111,8 +1111,8 @@
       call nc2out(tmax ,il,jl,1,1.,idnc,"zmax","zmax","m",-100.,30000.)
       call nc2out(tmin ,il,jl,1,1.,idnc,"zmin","zmin","m",-100.,30000.)
 
-      call nc2out(slope    ,il,jl,1,1.,idnc,"slope","slope","none",0.,10.)
-      call nc2out(slope_std,il,jl,1,1.,idnc,"slope_std","slope_std","none",0.,10.)
+      !call nc2out(slope    ,il,jl,1,1.,idnc,"slope","slope","none",0.,10.)
+      !call nc2out(slope_std,il,jl,1,1.,idnc,"slope_std","slope_std","none",0.,10.)
       
 !     write out g*zs(il,jl) to formatted file
       do j=1,jl

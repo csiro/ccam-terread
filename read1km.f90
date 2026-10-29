@@ -40,9 +40,9 @@ integer izsmaxj, izsminj, lci, lcj, nface
 real, intent(in) :: lons, lats
 real slope_l, aglat, aglata, aglon
 real alci, alcj, zs, amask
-real dx, dy, sx_e, sx_w, sy_n, sy_s
+!real dx, dy, sx_e, sx_w, sy_n, sy_s
 real dl
-real, dimension(7200) :: slope_a
+!real, dimension(7200) :: slope_a
 real, intent(in) :: cut1km
 logical, intent(in) :: debug
 logical ok
@@ -118,57 +118,57 @@ do j=1,ny
     i4zs_fix(1:nx,1:3) = 0
   end where  
         
-  ! estimate slope
-  ! approximate slope using surrounding gradients can can be droped when near a boundary
-  if ( j==1 ) then ! bottom row
-    dx = cos(aglat*3.1415927/180.)*112000.*dl
-    dy = 112000.*dl
-    sx_e = abs( real(i4zs_fix(2,2)) - real(i4zs_fix(1,2)) )
-    sy_n = abs( real(i4zs_fix(1,3)) - real(i4zs_fix(1,2)) )
-    slope_a(1) = 0.5*(sx_e/dx+sy_n/dy)
-    do i = 2,nx-1
-      sx_e = abs( real(i4zs_fix(i+1,2)) - real(i4zs_fix(i,2)) )
-      sx_w = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i-1,2)) )
-      sy_n = abs( real(i4zs_fix(i,3)) - real(i4zs_fix(i,2)) )
-      slope_a(i) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
-    end do  
-    sx_w = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx-1,2)) )
-    sy_n = abs( real(i4zs_fix(nx,3)) - real(i4zs_fix(nx,2)) )
-    slope_a(nx) = 0.5*(sx_w/dx+sy_n/dy)
-  else if ( j<ny ) then
-    dx = cos(aglat*3.1415927/180.)*112000.*dl
-    dy = 112000.*dl
-    sx_e = abs( real(i4zs_fix(2,2)) - real(i4zs_fix(1,2)) )
-    sy_n = abs( real(i4zs_fix(1,3)) - real(i4zs_fix(1,2)) )
-    sy_s = abs( real(i4zs_fix(1,2)) - real(i4zs_fix(1,1)) )
-    slope_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
-    do i = 2,nx-1
-      sx_e = abs( real(i4zs_fix(i+1,2)) - real(i4zs_fix(i,2)) )
-      sx_w = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i-1,2)) )
-      sy_n = abs( real(i4zs_fix(i,3)) - real(i4zs_fix(i,2)) )
-      sy_s = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i,1)) )
-      slope_a(i) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
-    end do  
-    sx_w = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx-1,2)) )
-    sy_n = abs( real(i4zs_fix(nx,3)) - real(i4zs_fix(nx,2)) )
-    sy_s = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx,1)) )
-    slope_a(nx) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
-  else ! top row
-    dx = cos(aglat*3.1415927/180.)*112000.*dl
-    dy = 112000.*dl
-    sx_e = abs( real(i4zs_fix(2,2)) - real(i4zs_fix(1,2)) )
-    sy_s = abs( real(i4zs_fix(1,2)) - real(i4zs_fix(1,1)) )
-    slope_a(1) = 0.5*(sx_e/dx+sy_s/dy)
-    do i = 2,nx-1
-      sx_e = abs( real(i4zs_fix(i+1,2)) - real(i4zs_fix(i,2)) )
-      sx_w = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i-1,2)) )
-      sy_s = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i,1)) )
-      slope_a(i) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
-    end do  
-    sx_w = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx-1,2)) )
-    sy_s = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx,1)) )
-    slope_a(nx) = 0.5*(sx_w/dx+sy_s/dy)
-  end if   
+  !! estimate slope
+  !! approximate slope using surrounding gradients can can be droped when near a boundary
+  !if ( j==1 ) then ! bottom row
+  !  dx = cos(aglat*3.1415927/180.)*112000.*dl
+  !  dy = 112000.*dl
+  !  sx_e = abs( real(i4zs_fix(2,2)) - real(i4zs_fix(1,2)) )
+  !  sy_n = abs( real(i4zs_fix(1,3)) - real(i4zs_fix(1,2)) )
+  !  slope_a(1) = 0.5*(sx_e/dx+sy_n/dy)
+  !  do i = 2,nx-1
+  !    sx_e = abs( real(i4zs_fix(i+1,2)) - real(i4zs_fix(i,2)) )
+  !    sx_w = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i-1,2)) )
+  !    sy_n = abs( real(i4zs_fix(i,3)) - real(i4zs_fix(i,2)) )
+  !    slope_a(i) = (1./3.)*(sx_e/dx+sx_w/dx+sy_n/dy)
+  !  end do  
+  !  sx_w = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx-1,2)) )
+  !  sy_n = abs( real(i4zs_fix(nx,3)) - real(i4zs_fix(nx,2)) )
+  !  slope_a(nx) = 0.5*(sx_w/dx+sy_n/dy)
+  !else if ( j<ny ) then
+  !  dx = cos(aglat*3.1415927/180.)*112000.*dl
+  !  dy = 112000.*dl
+  !  sx_e = abs( real(i4zs_fix(2,2)) - real(i4zs_fix(1,2)) )
+  !  sy_n = abs( real(i4zs_fix(1,3)) - real(i4zs_fix(1,2)) )
+  !  sy_s = abs( real(i4zs_fix(1,2)) - real(i4zs_fix(1,1)) )
+  !  slope_a(1) = (1./3.)*(sx_e/dx+sy_n/dy+sy_s/dy)
+  !  do i = 2,nx-1
+  !    sx_e = abs( real(i4zs_fix(i+1,2)) - real(i4zs_fix(i,2)) )
+  !    sx_w = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i-1,2)) )
+  !    sy_n = abs( real(i4zs_fix(i,3)) - real(i4zs_fix(i,2)) )
+  !    sy_s = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i,1)) )
+  !    slope_a(i) = 0.25*(sx_e/dx+sx_w/dx+sy_n/dy+sy_s/dy)
+  !  end do  
+  !  sx_w = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx-1,2)) )
+  !  sy_n = abs( real(i4zs_fix(nx,3)) - real(i4zs_fix(nx,2)) )
+  !  sy_s = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx,1)) )
+  !  slope_a(nx) = (1./3.)*(sx_w/dx+sy_n/dy+sy_s/dy)
+  !else ! top row
+  !  dx = cos(aglat*3.1415927/180.)*112000.*dl
+  !  dy = 112000.*dl
+  !  sx_e = abs( real(i4zs_fix(2,2)) - real(i4zs_fix(1,2)) )
+  !  sy_s = abs( real(i4zs_fix(1,2)) - real(i4zs_fix(1,1)) )
+  !  slope_a(1) = 0.5*(sx_e/dx+sy_s/dy)
+  !  do i = 2,nx-1
+  !    sx_e = abs( real(i4zs_fix(i+1,2)) - real(i4zs_fix(i,2)) )
+  !    sx_w = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i-1,2)) )
+  !    sy_s = abs( real(i4zs_fix(i,2)) - real(i4zs_fix(i,1)) )
+  !    slope_a(i) = (1./3.)*(sx_e/dx+sx_w/dx+sy_s/dy)
+  !  end do  
+  !  sx_w = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx-1,2)) )
+  !  sy_s = abs( real(i4zs_fix(nx,2)) - real(i4zs_fix(nx,1)) )
+  !  slope_a(nx) = 0.5*(sx_w/dx+sy_s/dy)
+  !end if   
 
   if ( ok ) then
 
@@ -208,12 +208,12 @@ do j=1,ny
 ! ocean point zs < 1
               amask = 0.
               zs=0.
-              slope_l = 0.
+              !slope_l = 0.
             else  ! zs>=-1000
 ! land point zs >= 1
               amask = 1.
               zs=real(i4zs(i))
-              slope_l = slope_a(i)
+              !slope_l = slope_a(i)
             end if  ! zs<-1000
 
             id1km(lci,lcj) = id1km(lci,lcj) + 1
@@ -228,10 +228,10 @@ do j=1,ny
             tmin(lci,lcj)=min(tmin(lci,lcj),zs)
 ! sum of squares for sd calc.
             tsd(lci,lcj)=tsd(lci,lcj)+zs**2
-! accumulate slope pnts
-            slope(lci,lcj) = slope(lci,lcj) + slope_l
-! sum of squares for slope_std calc
-            slope_std(lci,lcj) = slope_std(lci,lcj) + slope_l**2
+!! accumulate slope pnts
+!            slope(lci,lcj) = slope(lci,lcj) + slope_l
+!! sum of squares for slope_std calc
+!            slope_std(lci,lcj) = slope_std(lci,lcj) + slope_l**2
 
             if ( debug ) then
               if ( lci.eq.idia .and. lcj.eq.jdia ) then
